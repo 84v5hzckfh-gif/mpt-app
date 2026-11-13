@@ -150,7 +150,7 @@ button.openles{display:flex;align-items:center;gap:14px;width:100%;text-align:le
 .dag:first-child{border-top:0;padding-top:2px}
 .dag:last-child{padding-bottom:2px}
 button.dag{cursor:pointer}
-.dag .dn{flex:0 0 30px;font-weight:650;font-size:14px;color:var(--muted);padding-top:2px}
+.dag .dn{flex:0 0 5.6em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650;font-size:14px;color:var(--muted);padding-top:2px}
 .les{flex:1 1 120px;min-width:0;border-left:4px solid var(--line);border-radius:2px;padding:2px 0 2px 10px}
 .les .nr{font-size:12px;color:var(--muted);font-weight:650;letter-spacing:.02em}
 .les b{display:block;font-weight:600;margin:1px 0 3px}
@@ -282,7 +282,7 @@ nav.secties button[aria-current="page"]{background:linear-gradient(180deg,var(--
 .hits li button{width:100%;text-align:left;background:var(--vlak);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:8px;min-height:44px;font-size:16px;color:var(--ink);cursor:pointer}
 .day{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
 .day:first-of-type{border-top:0}
-.day .dn{flex:0 0 40px;font-weight:650;font-size:14px;color:var(--muted);padding-top:2px}
+.day .dn{flex:0 0 5.6em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650;font-size:14px;color:var(--muted);padding-top:2px}
 #scrGroep nav.secties{margin-top:4px}
 
 /* merk: naam en slogan op start- en slotscherm en op het afdekscherm */
@@ -290,6 +290,13 @@ nav.secties button[aria-current="page"]{background:linear-gradient(180deg,var(--
 .merk b{display:block;font-family:var(--num);font-size:30px;font-weight:800;letter-spacing:.06em;line-height:1.1}
 .merk span{display:block;margin-top:4px;font-size:13px;font-weight:650;letter-spacing:.16em;text-transform:uppercase;color:var(--lijn)}
 #cover .merk span{color:var(--accent)}
+
+/* toelichting per les (kolom "Toelichting" in het FTS-overzicht) */
+.uitleg{white-space:pre-line;overflow-wrap:break-word}
+p.uitleg{margin:10px 0 0;padding-top:10px;border-top:1px solid var(--line);font-size:15px;line-height:1.5}
+details.uitleg{margin-top:6px;font-size:14px}
+details.uitleg summary{cursor:pointer;color:var(--lijn);font-weight:650;min-height:32px;display:flex;align-items:center}
+details.uitleg p{margin:4px 0 2px;line-height:1.5}
 main{max-width:760px}
 .chips{flex-wrap:wrap;overflow-x:visible}
 table.overzicht{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:15px}
@@ -321,7 +328,7 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     <p class="muted small">Kies de groep en typ het instructeurswachtwoord. Daarna kun je logbestanden inlezen en bekijken.</p>
     <select id="busKeuze" class="fill" aria-label="Groep"></select>
     <div style="display:flex;gap:8px;margin-top:10px">
-      <input type="text" class="pw" id="pwOpen" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Instructeurswachtwoord" aria-label="Instructeurswachtwoord" style="flex:1">
+      <input type="text" class="pw" id="pwOpen" name="search-pwopen" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Instructeurswachtwoord" aria-label="Instructeurswachtwoord" style="flex:1">
       <button class="btn" type="button" id="btnOpen" style="width:auto;margin:0;padding:12px 16px">Open</button>
     </div>
     <div class="msg" id="msgOpen"></div>
@@ -343,11 +350,11 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     <label class="f" for="mCode" style="margin-top:0">1. Code van de groep (dezelfde als op het rooster, bijv. G07)</label>
     <input type="text" id="mCode" maxlength="10" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false">
     <label class="f" for="mGroepPw">2. Groepswachtwoord (hetzelfde als van het rooster)</label>
-    <input type="text" class="pw" id="mGroepPw" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <input type="text" class="pw" id="mGroepPw" name="search-mgroeppw" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
     <label class="f" for="mPw1">3. Instructeurswachtwoord (nieuw, minimaal 10 tekens, niet het groepswachtwoord)</label>
-    <input type="text" class="pw" id="mPw1" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <input type="text" class="pw" id="mPw1" name="search-mpw1" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
     <label class="f" for="mPw2">Herhaal instructeurswachtwoord</label>
-    <input type="text" class="pw" id="mPw2" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <input type="text" class="pw" id="mPw2" name="search-mpw2" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
     <button class="btn" type="button" id="btnMaak">4. Maak brievenbus</button>
     <div class="msg" id="msgMaak"></div>
   </div>
@@ -375,7 +382,7 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     <button class="btn sec" type="button" id="btnRoosterIn">Roosterbestand kiezen</button>
     <div id="roosterPw" hidden>
       <div style="display:flex;gap:8px;margin-top:10px">
-        <input type="text" class="pw" id="pwRooster" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Groepswachtwoord" aria-label="Groepswachtwoord van het rooster" style="flex:1">
+        <input type="text" class="pw" id="pwRooster" name="search-pwrooster" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Groepswachtwoord" aria-label="Groepswachtwoord van het rooster" style="flex:1">
         <button class="btn" type="button" id="btnRoosterOpen" style="width:auto;margin:0;padding:12px 16px">Open</button>
       </div>
     </div>
@@ -467,9 +474,9 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     <label class="f" for="mGNaam">Groepsnaam (geheim, alleen zichtbaar in de app na het wachtwoord)</label>
     <input type="text" id="mGNaam" maxlength="60" autocomplete="off" autocorrect="off" spellcheck="false">
     <label class="f" for="mPwA">3. Wachtwoord (minimaal 10 tekens)</label>
-    <input type="text" class="pw" id="mPwA" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <input type="text" class="pw" id="mPwA" name="search-mpwa" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
     <label class="f" for="mPwB">Herhaal wachtwoord</label>
-    <input type="text" class="pw" id="mPwB" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <input type="text" class="pw" id="mPwB" name="search-mpwb" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
     <button class="btn" type="button" id="btnVersleutel" disabled>4. Versleutel en download</button>
     <div class="msg" id="msgVersleutel"></div>
     <p class="note">Gebruik voor het MPT-bestand en het rooster van één groep <b>dezelfde code, naam en hetzelfde wachtwoord</b>. Houd per groep altijd dezelfde code aan. Verwijder daarna het onversleutelde .json-bestand en deel het wachtwoord nooit in hetzelfde bericht als het bestand.</p>
@@ -790,6 +797,7 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
 
   const leegLog = () => ({ versie: 1, items: {}, keuze: null, maxHs: null, vnr: null, bus: null });
   const sleutelVan = (meso, wk, dag, nr) => JSON.stringify([String(meso), String(wk), dag, String(nr)]);
+  const MAX_UITLEG = 2000;   // toelichting per les uit het FTS-overzicht (kolom "Toelichting")
   const tekst = (v) => (v === undefined || v === null ? "" : String(v));
 
   function controleerLog(x) {
@@ -822,7 +830,7 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
   function lesVan(rooster, nr) {
     const les = rooster.lessen && rooster.lessen[nr];
     if (!les) return null;
-    return { d: tekst(les.d), les: tekst(les.les), zone: tekst(les.zone), km: tekst(les.km), opdr: tekst(les.opdr) };
+    return { d: tekst(les.d), les: tekst(les.les), zone: tekst(les.zone), km: tekst(les.km), opdr: tekst(les.opdr), uitleg: tekst(les.uitleg).slice(0, MAX_UITLEG) };
   }
 
   /**
@@ -1355,6 +1363,9 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
   class ExcelFout extends Error { constructor(tekst) { super(tekst); this.name = "ExcelFout"; } }
   const dec = new TextDecoder();
   const MAX_LES_RIJEN = 2000, MAX_WEKEN = 80, MAX_PLANNING_RIJ = 400;
+  const MAX_UITLEG = 2000, MAX_KOP_KOLOM = 26;
+  // Extra info per les: een kolom in tabblad Lessen met als kop "Toelichting" (mag elke kolom zijn; G-I zijn al in gebruik).
+  const UITLEG_KOP = /^\s*toelichting\b/i;
 
   async function readZip(buf) {
     const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
@@ -1420,10 +1431,13 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     const les = sheets.find(s => s.naam === "Lessen");
     if (!les) throw new ExcelFout("Tabblad 'Lessen' niet gevonden. Is dit het FTS-overzicht?");
     const lessen = {};
+    let uitlegKol = null;
+    for (let c = 1; c <= MAX_KOP_KOLOM && !uitlegKol; c++) if (UITLEG_KOP.test(String(les.cells[colL(c) + "1"] || ""))) uitlegKol = colL(c);
     for (let r = 2; r < MAX_LES_RIJEN; r++) {
       const nr = lesNr(les.cells["A" + r]); if (!nr) { if (r > 5 && !les.cells["A" + (r + 1)]) break; continue; }
       const g = k => { const v = les.cells[k + r]; return v === undefined ? "" : String(v); };
-      lessen[nr] = { d: g("B"), les: g("C"), zone: g("D"), km: g("E"), opdr: g("F") };
+      const uitleg = uitlegKol ? g(uitlegKol).trim().slice(0, MAX_UITLEG) : "";
+      lessen[nr] = { d: g("B"), les: g("C"), zone: g("D"), km: g("E"), opdr: g("F"), ...(uitleg ? { uitleg } : {}) };
     }
     const mesos = [];
     for (const s of sheets) {
@@ -2218,6 +2232,7 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
           const meta = [L.zone, [L.km, L.opdr].filter(Boolean).join(" · ")].filter(Boolean).join("  |  ");
           blok.append(el("div", { class: "nr", text: nr + "  " + (L.d || "") }), el("b", { text: L.les || L.d || "" }));
           if (meta) blok.append(el("div", { class: "meta", text: meta }));
+          if (L.uitleg) blok.append(el("details", { class: "uitleg" }, el("summary", { text: "Meer info" }), el("p", { text: String(L.uitleg).slice(0, 2000) })));
         }
         lijst.append(el("div", { class: "day" }, el("div", { class: "dn", text: String(dn) }), blok));
       });

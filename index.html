@@ -149,7 +149,7 @@ button.openles{display:flex;align-items:center;gap:14px;width:100%;text-align:le
 .dag:first-child{border-top:0;padding-top:2px}
 .dag:last-child{padding-bottom:2px}
 button.dag{cursor:pointer}
-.dag .dn{flex:0 0 30px;font-weight:650;font-size:14px;color:var(--muted);padding-top:2px}
+.dag .dn{flex:0 0 5.6em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650;font-size:14px;color:var(--muted);padding-top:2px}
 .les{flex:1 1 120px;min-width:0;border-left:4px solid var(--line);border-radius:2px;padding:2px 0 2px 10px}
 .les .nr{font-size:12px;color:var(--muted);font-weight:650;letter-spacing:.02em}
 .les b{display:block;font-weight:600;margin:1px 0 3px}
@@ -281,7 +281,7 @@ nav.secties button[aria-current="page"]{background:linear-gradient(180deg,var(--
 .hits li button{width:100%;text-align:left;background:var(--vlak);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:8px;min-height:44px;font-size:16px;color:var(--ink);cursor:pointer}
 .day{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
 .day:first-of-type{border-top:0}
-.day .dn{flex:0 0 40px;font-weight:650;font-size:14px;color:var(--muted);padding-top:2px}
+.day .dn{flex:0 0 5.6em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650;font-size:14px;color:var(--muted);padding-top:2px}
 #scrGroep nav.secties{margin-top:4px}
 
 /* merk: naam en slogan op start- en slotscherm en op het afdekscherm */
@@ -289,6 +289,13 @@ nav.secties button[aria-current="page"]{background:linear-gradient(180deg,var(--
 .merk b{display:block;font-family:var(--num);font-size:30px;font-weight:800;letter-spacing:.06em;line-height:1.1}
 .merk span{display:block;margin-top:4px;font-size:13px;font-weight:650;letter-spacing:.16em;text-transform:uppercase;color:var(--lijn)}
 #cover .merk span{color:var(--accent)}
+
+/* toelichting per les (kolom "Toelichting" in het FTS-overzicht) */
+.uitleg{white-space:pre-line;overflow-wrap:break-word}
+p.uitleg{margin:10px 0 0;padding-top:10px;border-top:1px solid var(--line);font-size:15px;line-height:1.5}
+details.uitleg{margin-top:6px;font-size:14px}
+details.uitleg summary{cursor:pointer;color:var(--lijn);font-weight:650;min-height:32px;display:flex;align-items:center}
+details.uitleg p{margin:4px 0 2px;line-height:1.5}
 </style>
 </head>
 <body class="app">
@@ -321,7 +328,7 @@ nav.secties button[aria-current="page"]{background:linear-gradient(180deg,var(--
     <h2>Rooster openen</h2>
     <p class="muted small" id="lockInfo"></p>
     <div style="display:flex;gap:8px">
-      <input type="text" class="pw" id="pwUnlock" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Wachtwoord" aria-label="Wachtwoord" style="flex:1">
+      <input type="text" class="pw" id="pwUnlock" name="search-pwunlock" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Wachtwoord" aria-label="Wachtwoord" style="flex:1">
       <button class="btn" type="button" id="btnUnlock" style="width:auto;margin:0;padding:12px 16px">Open</button>
     </div>
     <div class="msg" id="msgLock"></div>
@@ -375,7 +382,7 @@ nav.secties button[aria-current="page"]{background:linear-gradient(180deg,var(--
       <h2 id="nieuwTitel">Nieuw rooster</h2>
       <p class="muted small" id="nieuwInfo"></p>
       <div style="display:flex;gap:8px">
-        <input type="text" class="pw" id="pwNieuw" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Wachtwoord" aria-label="Wachtwoord van het nieuwe bestand" style="flex:1">
+        <input type="text" class="pw" id="pwNieuw" name="search-pwnieuw" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Wachtwoord" aria-label="Wachtwoord van het nieuwe bestand" style="flex:1">
         <button class="btn" type="button" id="btnNieuwOpen" style="width:auto;margin:0;padding:12px 16px">Open</button>
       </div>
       <div class="msg" id="msgNieuw"></div>
@@ -1031,6 +1038,7 @@ nav.secties button[aria-current="page"]{background:linear-gradient(180deg,var(--
 
   const leegLog = () => ({ versie: 1, items: {}, keuze: null, maxHs: null, vnr: null, bus: null });
   const sleutelVan = (meso, wk, dag, nr) => JSON.stringify([String(meso), String(wk), dag, String(nr)]);
+  const MAX_UITLEG = 2000;   // toelichting per les uit het FTS-overzicht (kolom "Toelichting")
   const tekst = (v) => (v === undefined || v === null ? "" : String(v));
 
   function controleerLog(x) {
@@ -1063,7 +1071,7 @@ nav.secties button[aria-current="page"]{background:linear-gradient(180deg,var(--
   function lesVan(rooster, nr) {
     const les = rooster.lessen && rooster.lessen[nr];
     if (!les) return null;
-    return { d: tekst(les.d), les: tekst(les.les), zone: tekst(les.zone), km: tekst(les.km), opdr: tekst(les.opdr) };
+    return { d: tekst(les.d), les: tekst(les.les), zone: tekst(les.zone), km: tekst(les.km), opdr: tekst(les.opdr), uitleg: tekst(les.uitleg).slice(0, MAX_UITLEG) };
   }
 
   /**
@@ -2529,6 +2537,7 @@ function lesScherm(item, k) {
   kop.textContent = ""; kop.className = "card leskop"; kop.style.borderLeftColor = discKleur(L && L.d);
   kop.append(el("div", { class: "nr", text: item.dagNaam + " · les " + item.nr + (L && L.d ? " · " + L.d : "") }), el("b", { text: L ? (L.les || L.d) : "Les " + item.nr }));
   for (const regel of L ? [L.zone, L.km, L.opdr].filter(Boolean) : []) kop.append(el("div", { class: "muted", text: regel }));
+  if (L && L.uitleg) kop.append(el("p", { class: "uitleg", id: "lesUitleg", text: L.uitleg }));   // toelichting van de instructeur
   invoer = { status: item.log ? item.log.status : null, zwaarte: item.log ? item.log.zwaarte : null, fit: (item.log && item.log.fit) || null };
   wijzigMaxHs = false;
   msg($("#msgFit"), "");
