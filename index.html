@@ -1,0 +1,2771 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f2f4ec">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#090b07">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="COMBATREADY">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<title>COMBATREADY</title>
+<style>
+/* Kleuren. --accent is de felle vulkleur (met donkere tekst --op erop); --lijn is dezelfde kleur
+   voor lijnen en tekst op de achtergrond (in het lichte thema donkerder, anders is hij op wit niet te lezen).
+   De kop volgt het thema (licht in licht, donker in donker): iOS 27 legt vanaf het beginscherm zelf een waas in de
+   kleur van het thema over de bovenrand en zet de statusbalk in zwarte of witte tekst; een donkere kop in het
+   lichte thema wordt daar grijs en wazig van. */
+:root{
+  --bg:#f2f4ec; --card:#ffffff; --card2:#ffffff; --ink:#141a0c; --muted:#5b6650; --line:#dde3d0; --vlak:#eef1e6;
+  --accent:#c9f23f; --accent2:#a9de22; --op:#0d1205; --lijn:#4c7d00;
+  --field:#f6f8f0; --field-line:#cfd7bf;
+  --goed:#33590a; --goed-bg:#e4f4bf; --niet:#8b1a1a; --niet-bg:#fde8e8; --oud:#8a5d00;
+  --reeks:#5c9600; --reeks-zacht:#cfe3a4; --z1:#d5e8ad; --z2:#b5d671; --z3:#8fbd3a; --z4:#679a12; --z5:#44700a;
+  --kop:#f2f4ec; --kop-ink:#141a0c; --kop-knop:rgba(20,26,12,.06); --kop-rand:rgba(20,26,12,.16); --kop-lijn:1px solid #dde3d0; --nav:#ffffff;
+  --shadow:0 1px 2px rgba(20,26,12,.06),0 6px 18px rgba(20,26,12,.06); --knopgloed:0 6px 16px rgba(120,160,20,.28);
+  --num:ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#090b07; --card:#191d13; --card2:#11140c; --ink:#f4f7ec; --muted:#9aa58c; --line:#272c1f; --vlak:#1c2015;
+    --accent:#cdf545; --accent2:#9bd61f; --lijn:#cdf545;
+    --field:#14180e; --field-line:#333a27;
+    --goed:#cdf545; --goed-bg:#232d0b; --niet:#ffb4a8; --niet-bg:#3a1a16; --oud:#e8b85a;
+    --reeks:#cdf545; --reeks-zacht:#4f6e14; --z1:#4f6e14; --z2:#78a31c; --z3:#a4d92a; --z4:#cdf545; --z5:#e9ff8f;
+    --kop:#090b07; --kop-ink:#f4f7ec; --kop-knop:rgba(255,255,255,.10); --kop-rand:rgba(255,255,255,.14); --kop-lijn:0; --nav:#161a10;
+    --shadow:none; --knopgloed:0 10px 28px rgba(205,245,69,.24); color-scheme:dark;
+  }
+  :root:not([data-theme="light"]) body.app::before{opacity:1}
+}
+:root[data-theme="dark"]{
+  --bg:#090b07; --card:#191d13; --card2:#11140c; --ink:#f4f7ec; --muted:#9aa58c; --line:#272c1f; --vlak:#1c2015;
+  --accent:#cdf545; --accent2:#9bd61f; --lijn:#cdf545;
+  --field:#14180e; --field-line:#333a27;
+  --goed:#cdf545; --goed-bg:#232d0b; --niet:#ffb4a8; --niet-bg:#3a1a16; --oud:#e8b85a;
+  --reeks:#cdf545; --reeks-zacht:#4f6e14; --z1:#4f6e14; --z2:#78a31c; --z3:#a4d92a; --z4:#cdf545; --z5:#e9ff8f;
+  --kop:#090b07; --kop-ink:#f4f7ec; --kop-knop:rgba(255,255,255,.10); --kop-rand:rgba(255,255,255,.14); --kop-lijn:0; --nav:#161a10;
+  --shadow:none; --knopgloed:0 10px 28px rgba(205,245,69,.24); color-scheme:dark;
+}
+:root[data-theme="dark"] body.app::before{opacity:1}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-text-size-adjust:100%;min-height:100vh}
+/* Gloed bovenin (alleen de log-app, body.app). Gewone kleurverlopen, geen vervaging: dat hapert op oudere toestellen.
+   Maten in schermeenheden, zodat de gloed in de kop en op de pagina eronder precies op elkaar aansluiten.
+   De gloed begint bovenaan op nul en zwelt daaronder aan: Safari kleurt de statusbalk met de vaste kleur van de kop
+   (--kop), niet met het verloop, en zo sluit die er zonder naad op aan. */
+body.app{--gloed:linear-gradient(180deg,rgba(205,245,69,0) 0,rgba(205,245,69,.20) 9vh,rgba(205,245,69,.06) 24vh,rgba(205,245,69,0) 44vh)}
+/* z-index -1 en main zonder eigen laag: anders zit het afdekscherm (#cover, in main) gevangen onder de kop en de balk. */
+body.app::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:var(--gloed);opacity:0}
+/* Vanaf het beginscherm legt iOS 27 een waas over de bovenrand die verder reikt dan de statusbalk; de titel staat daarom lager (x 1,6). */
+header.bar{position:sticky;top:0;z-index:5;background:var(--kop);color:var(--kop-ink);border-bottom:var(--kop-lijn);padding:calc(env(safe-area-inset-top) * 1.6 + 12px) max(16px,env(safe-area-inset-right)) 12px max(16px,env(safe-area-inset-left));display:flex;align-items:center;gap:12px}
+body.app header.bar{background:var(--gloed),var(--kop)}
+header.bar h1{font-size:21px;margin:0;font-weight:700;letter-spacing:-.3px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+header.bar button{background:var(--kop-knop);color:var(--kop-ink);border:1px solid var(--kop-rand);border-radius:999px;padding:8px 16px;font-size:15px;font-weight:600;min-height:44px}
+main{max-width:640px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 32px) max(16px,env(safe-area-inset-left));overflow-wrap:break-word}
+.screen[hidden]{display:none!important}
+.card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:16px;margin:0 0 12px}
+.card[hidden]{display:none}
+.card h2{font-size:11.5px;text-transform:uppercase;letter-spacing:.11em;color:var(--muted);margin:0 0 10px;font-weight:700}
+.lead{font-size:17px;margin:4px 0 12px}
+.muted{color:var(--muted)}
+.small{font-size:13.5px}
+label.f{display:block;font-size:14px;color:var(--muted);margin:14px 0 6px}
+input,select{width:100%;font-size:16px;padding:12px 14px;border:1px solid var(--field-line);border-radius:14px;background:var(--field);color:var(--ink);min-height:48px}
+input:focus,select:focus{outline:2px solid var(--lijn);outline-offset:1px}
+button{font-family:inherit}
+button:focus-visible{outline:2px solid var(--lijn);outline-offset:2px}
+button.btn{display:block;width:100%;font-size:17px;font-weight:700;padding:13px;min-height:52px;border-radius:999px;border:0;background:linear-gradient(180deg,var(--accent),var(--accent2));color:var(--op);margin-top:14px;cursor:pointer}
+body.app button.btn{box-shadow:var(--knopgloed)}
+button.btn.sec,body.app button.btn.sec{background:transparent;color:var(--ink);border:1px solid var(--field-line);box-shadow:none;font-weight:600}
+button.btn:disabled{opacity:.55}
+.msg{margin:10px 0 0;font-size:14px;padding:11px 14px;border-radius:14px;display:none}
+.msg.show{display:block}
+.msg.err{background:var(--niet-bg);color:var(--niet)}
+.msg.ok{background:var(--goed-bg);color:var(--goed)}
+.note{font-size:13px;color:var(--muted);margin:8px 0 0}
+.foot{text-align:center;font-size:12px;color:var(--muted);margin:18px 0 6px}
+.linkish{background:none;border:0;color:var(--muted);text-decoration:underline;font-size:14px;padding:8px;cursor:pointer;min-height:44px}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite;vertical-align:-3px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty{color:var(--muted);font-style:italic;padding:6px 0}
+.step{display:flex;gap:10px;align-items:flex-start;margin:8px 0}
+.step i{font-style:normal;flex:0 0 24px;height:24px;border-radius:50%;background:var(--accent);color:var(--op);font-size:13px;display:grid;place-items:center;font-weight:700}
+.chips{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:2px 0 4px;margin-top:10px}
+.chips:first-child{margin-top:0}
+.chips button{flex:0 0 auto;border:1px solid var(--field-line);background:var(--field);color:var(--ink);border-radius:999px;padding:8px 16px;font-size:15px;font-weight:600;cursor:pointer;min-height:44px}
+.chips button[aria-pressed="true"]{background:linear-gradient(180deg,var(--accent),var(--accent2));border-color:transparent;color:var(--op);font-weight:700}
+input.pw{-webkit-text-security:disc;text-security:disc}
+#cover{position:fixed;inset:0;z-index:99;background:var(--kop);color:var(--kop-ink);display:grid;place-items:center;font-size:22px;font-weight:700;letter-spacing:.04em}
+#cover[hidden]{display:none}
+.back{background:none;border:0;color:var(--muted);font-size:15px;font-weight:600;padding:0 16px 0 0;margin:0 0 6px;cursor:pointer;min-height:44px;min-width:72px;text-align:left}
+.num{font-family:var(--num);font-weight:600;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.label{font-size:11.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);font-weight:700}
+
+/* balk onderaan: Week, Trend, Inleveren */
+nav.tabs{position:fixed;z-index:6;left:max(16px,env(safe-area-inset-left),calc(50% - 304px));right:max(16px,env(safe-area-inset-right),calc(50% - 304px));bottom:calc(env(safe-area-inset-bottom) + 12px);display:flex;gap:6px;padding:6px;border-radius:999px;background:var(--nav);border:1px solid var(--line);box-shadow:0 8px 28px rgba(0,0,0,.22)}
+nav.tabs[hidden]{display:none}
+nav.tabs button{flex:1;min-width:0;min-height:52px;border:0;border-radius:999px;background:none;color:var(--muted);font-size:12px;font-weight:650;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+nav.tabs button[aria-current="page"]{background:linear-gradient(180deg,var(--accent),var(--accent2));color:var(--op);font-weight:700}
+nav.tabs svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+#scrWeek{padding-bottom:88px}
+/* Tijdens typen de balk weg: op Android schuift hij anders met het toetsenbord mee omhoog, over het veld en de melding heen. */
+body:has(#scrWeek input:focus) nav.tabs{display:none}
+
+/* weekoverzicht */
+.held{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin:0 0 12px;background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:16px}
+.held:empty{display:none}
+.ring{position:relative;width:124px;height:124px;flex:0 0 auto}
+.ring svg{display:block;width:100%;height:100%}
+.ringbaan{fill:none;stroke:var(--vlak);stroke-width:11}
+.ringboog{fill:none;stroke:var(--lijn);stroke-width:11;stroke-linecap:round}
+.ring>div{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .num{font-size:36px;line-height:1}
+.ring .label{margin-top:4px;font-size:10.5px}
+.heldcijfers{min-width:0;flex:1 1 96px}
+.heldcijfers .groot{display:block;font-size:50px;line-height:1.05}
+.mini{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px;color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
+.mini b{color:var(--ink);font-weight:650}
+.held>.note{flex:1 0 100%;margin:0}
+button.openles{display:flex;align-items:center;gap:14px;width:100%;text-align:left;color:var(--ink);font-size:16px;cursor:pointer;border-left-width:5px}
+.openles[hidden]{display:none}
+.openles>span:first-child{flex:1;min-width:0}
+.openles b{display:block;font-size:17px;font-weight:650;letter-spacing:-.2px;margin:3px 0 1px}
+.openles small{display:block;color:var(--muted);font-size:13px}
+.openles i{flex:0 0 46px;height:46px;border-radius:50%;background:linear-gradient(180deg,var(--accent),var(--accent2));color:var(--op);display:grid;place-items:center;font-style:normal;font-size:22px;font-weight:700;box-shadow:var(--knopgloed)}
+.tegels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 14px}
+.tegel{background:var(--vlak);border:1px solid var(--line);border-radius:18px;padding:12px 10px;text-align:center;min-width:0}
+.tegel b{display:block;font-family:var(--num);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.15;letter-spacing:-.3px}
+.tegel span{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:650;margin-top:3px}
+/* Op een smal scherm zakt het label onder de les in plaats van de lesnaam fijn te drukken of de pagina breder te maken. */
+.dag{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:stretch;width:100%;padding:12px 0;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font-size:16px;text-align:left}
+.dag:first-child{border-top:0;padding-top:2px}
+.dag:last-child{padding-bottom:2px}
+button.dag{cursor:pointer}
+.dag .dn{flex:0 0 30px;font-weight:650;font-size:14px;color:var(--muted);padding-top:2px}
+.les{flex:1 1 120px;min-width:0;border-left:4px solid var(--line);border-radius:2px;padding:2px 0 2px 10px}
+.les .nr{font-size:12px;color:var(--muted);font-weight:650;letter-spacing:.02em}
+.les b{display:block;font-weight:600;margin:1px 0 3px}
+.les .meta{font-size:13px;color:var(--muted)}
+.stand{flex:0 0 auto;align-self:center;margin-left:auto;padding:5px 10px;border-radius:999px;font-size:13px;font-weight:650;background:var(--vlak);color:var(--muted);white-space:nowrap}
+.stand.gedaan{background:var(--goed-bg);color:var(--goed)}
+.stand.niet{background:var(--niet-bg);color:var(--niet)}
+.stand.vervallen{color:var(--oud)}
+.dag.vervallen .les b{text-decoration:line-through;color:var(--muted)}
+
+/* trend */
+.trendkop{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:10px;margin:0 0 6px}
+.trendkop .num{display:block;font-size:44px;line-height:1.05;margin-top:2px}
+.pil{flex:0 0 auto;font-size:12.5px;font-weight:650;color:var(--goed);background:var(--goed-bg);border-radius:999px;padding:5px 11px}
+
+/* les loggen */
+.leskop .nr{font-size:11.5px;color:var(--muted);font-weight:700;letter-spacing:.09em;text-transform:uppercase}
+.leskop b{display:block;font-size:22px;font-weight:700;letter-spacing:-.3px;margin:3px 0 6px}
+.leskop{border-left:5px solid var(--line)}
+.keuze2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.keuze2 button,.zwaarte button{border:1px solid var(--field-line);background:var(--field);color:var(--ink);border-radius:16px;padding:13px 4px;min-height:50px;font-size:16px;font-weight:600;cursor:pointer}
+.keuze2 button[aria-pressed="true"],.zwaarte button[aria-pressed="true"]{background:linear-gradient(180deg,var(--accent),var(--accent2));border-color:transparent;color:var(--op);font-weight:700;box-shadow:var(--knopgloed)}
+.zwaarte{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.zwaarte button{font-family:var(--num);font-variant-numeric:tabular-nums}
+
+/* horlogebestand en grafieken */
+#fitKort .tegels{margin:10px 0 0}
+#fitKort .tegel b{font-size:20px}
+.grafiek{margin:0 0 16px}
+.grafiek:last-child{margin-bottom:0}
+.grafiek svg{display:block;width:100%;height:auto;touch-action:pan-y;overflow:visible}
+.gkop{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 0 4px}
+.gkop b{font-size:15px;font-weight:650}
+.guit{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
+.guit.actief{color:var(--ink);font-weight:650}
+.gtekst{font-size:9.5px;fill:var(--muted);font-variant-numeric:tabular-nums;paint-order:stroke;stroke:var(--card2);stroke-width:3px;stroke-linejoin:round}
+.gtekst.sterk{fill:var(--ink);font-weight:700}
+.graster{stroke:var(--line);stroke-width:1;stroke-dasharray:2 3}
+.gas{stroke:var(--line);stroke-width:1}
+.glijn{fill:none;stroke:var(--reeks);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.gvul{stroke:none}
+.gstop1{stop-color:var(--reeks);stop-opacity:.32}
+.gstop2{stop-color:var(--reeks);stop-opacity:0}
+.gkruis{stroke:var(--muted);stroke-width:1}
+.gstip{fill:var(--reeks);stroke:var(--card2);stroke-width:2}
+.gstaaf{fill:var(--reeks-zacht)}
+.gstaaf.huidig{fill:var(--reeks)}
+.gvlak{fill:transparent;cursor:pointer}
+.zrij{display:grid;grid-template-columns:92px 1fr auto;gap:10px;align-items:center;padding:5px 0;font-size:13px}
+.znaam{color:var(--muted);font-variant-numeric:tabular-nums}
+.znaam b{color:var(--ink);font-weight:650}
+.zbalk{display:block;height:10px;border-radius:5px;background:var(--vlak);overflow:hidden}
+.zbalk i{display:block;height:100%;border-radius:5px;min-width:2px}
+.zbalk .z1{background:var(--z1)}.zbalk .z2{background:var(--z2)}.zbalk .z3{background:var(--z3)}.zbalk .z4{background:var(--z4)}.zbalk .z5{background:var(--z5)}
+.zwaarde{font-variant-numeric:tabular-nums;white-space:nowrap}
+.rij2{display:flex;gap:8px;align-items:stretch}
+.rij2 input{flex:1}
+.rij2 button.btn{width:auto;margin:0;padding:12px 20px}
+table.ronden{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:14px}
+table.ronden th,table.ronden td{padding:7px 4px;text-align:right;border-top:1px solid var(--line);white-space:nowrap}
+table.ronden th{font-size:12px;color:var(--muted);font-weight:700;border-top:0}
+table.ronden td:first-child,table.ronden th:first-child{text-align:left}
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media (max-width:360px){table.ronden{font-size:13px}table.ronden th,table.ronden td{padding:7px 2px}.ring{width:104px;height:104px}.ring .num{font-size:30px}.heldcijfers .groot{font-size:42px}}
+
+/* uitslagen (MPT): opmaak overgenomen uit de oude app, in de kleuren van deze app */
+.zoek input{font-size:20px;letter-spacing:.04em}
+.uitslag .card h3{font-size:15px;margin:16px 0 8px}
+.uitslag .kv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.uitslag .kv div{background:var(--vlak);border-radius:14px;padding:8px 10px;min-width:0}
+.uitslag .kv span{display:block;font-size:12px;color:var(--muted)}
+.uitslag .kv b{font-size:17px;font-weight:650;overflow-wrap:break-word}
+.uitslag .rows{margin:0;padding:0;list-style:none}
+.uitslag .rows li{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.uitslag .rows li:first-child{border-top:0}
+.uitslag .rows .name{flex:1;min-width:0}
+.uitslag .rows .name b{display:block;font-weight:600}
+.uitslag .rows .name small{color:var(--muted);font-size:13px}
+.uitslag .rows li.total{font-weight:700}
+.uitslag .badge{display:inline-block;padding:5px 10px;border-radius:999px;font-size:14px;font-weight:650;background:var(--vlak);color:var(--ink);white-space:nowrap;max-width:48%;overflow:hidden;text-overflow:ellipsis}
+.uitslag .badge.big{font-size:16px;padding:7px 14px}
+.uitslag .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.uitslag .out{display:grid;grid-template-columns:1fr auto;gap:6px 12px;margin-top:12px;padding:12px;border-radius:14px;background:var(--vlak)}
+.uitslag .out span{color:var(--muted)}
+.uitslag .out b{text-align:right;font-variant-numeric:tabular-nums}
+.uitslag table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:14px}
+.uitslag th,.uitslag td{padding:7px 6px;text-align:right;border-top:1px solid var(--line);white-space:nowrap}
+.uitslag th{font-size:12px;color:var(--muted);font-weight:700;border-top:0}
+.uitslag td:first-child,.uitslag th:first-child{text-align:left;position:sticky;left:0;background:var(--card2)}
+.uitslag .status{font-weight:650}
+.uitslag .banner{border:1px solid var(--line);border-left:5px solid var(--oud);background:var(--card);border-radius:14px;padding:10px 12px;margin:0 0 12px;font-size:14px}
+.uitslag .banner b{display:block;margin-bottom:2px}
+.uitslag .card.oud{border-left:5px solid var(--oud)}
+.uitslag .card.oud h2,.uitslag .oudrij small,.uitslag .oudkv span,.uitslag .oudtxt{color:var(--oud)}
+.uitslag .rows li.oudrij{box-shadow:inset 4px 0 0 var(--oud);padding-left:12px}
+.uitslag details.hist{border-top:1px solid var(--line);padding:4px 0}
+.uitslag details.hist:first-of-type{border-top:0}
+.uitslag details.hist summary{display:flex;align-items:center;gap:8px;padding:8px 0;cursor:pointer;list-style:none;font-weight:600;min-height:44px}
+.uitslag details.hist summary::-webkit-details-marker{display:none}
+.uitslag details.hist summary .dt{flex:1;min-width:0}
+.uitslag details.hist summary .badge{max-width:none}
+.uitslag details.hist .out{margin:2px 0 10px}
+@media (max-width:360px){.uitslag .kv{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Vier knoppen in de balk: op een heel smal scherm (of sterk ingezoomd) alleen de pictogrammen; de tekst blijft voor schermlezers. */
+@media (max-width:300px){nav.tabs button{font-size:0;gap:0}}
+
+/* instructeurs-pagina: onderdelen bovenaan, en de meso-keuze bij Bestanden maken */
+nav.secties[hidden]{display:none}
+nav.secties{display:flex;gap:6px;padding:5px;margin:0 0 14px;border-radius:999px;background:var(--card);border:1px solid var(--line)}
+nav.secties button{flex:1;min-width:0;min-height:44px;border:0;border-radius:999px;background:none;color:var(--muted);font-size:15px;font-weight:650;cursor:pointer}
+nav.secties button[aria-current="page"]{background:linear-gradient(180deg,var(--accent),var(--accent2));color:var(--op);font-weight:700}
+.pick{margin-top:10px}
+.pick label{display:flex;gap:12px;align-items:center;padding:10px 2px;border-top:1px solid var(--line);font-size:16px;cursor:pointer;min-height:44px}
+.pick label:first-of-type{border-top:0}
+.pick input{width:22px;height:22px;flex:0 0 22px;margin:0;min-height:0;accent-color:var(--lijn)}
+.pick small{color:var(--muted);margin-left:auto;font-size:13px}
+
+/* groepen (instructeurs): lijst, zoektreffers en rooster per dag */
+.glist,.hits{list-style:none;margin:0;padding:0}
+.glist li{border-top:1px solid var(--line)}
+.glist li:first-child{border-top:0}
+.glist button.g{width:100%;display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;background:none;border:0;padding:12px 2px;min-height:48px;color:var(--ink);font-size:16px;text-align:left;cursor:pointer}
+.glist .code{font-weight:700;min-width:64px}
+.glist .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.glist .nm.dicht{color:var(--muted)}
+.glist small{flex-basis:100%;color:var(--muted);font-size:13px}
+.glist .gpw{margin:4px 0 6px}
+.gextra{display:flex;gap:12px;flex-wrap:wrap}
+.hits li button{width:100%;text-align:left;background:var(--vlak);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:8px;min-height:44px;font-size:16px;color:var(--ink);cursor:pointer}
+.day{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.day:first-of-type{border-top:0}
+.day .dn{flex:0 0 40px;font-weight:650;font-size:14px;color:var(--muted);padding-top:2px}
+#scrGroep nav.secties{margin-top:4px}
+
+/* merk: naam en slogan op start- en slotscherm en op het afdekscherm */
+.merk{text-align:center;margin:8px 0 18px}
+.merk b{display:block;font-family:var(--num);font-size:30px;font-weight:800;letter-spacing:.06em;line-height:1.1}
+.merk span{display:block;margin-top:4px;font-size:13px;font-weight:650;letter-spacing:.16em;text-transform:uppercase;color:var(--lijn)}
+#cover .merk span{color:var(--accent)}
+</style>
+</head>
+<body class="app">
+<header class="bar">
+  <h1 id="title"></h1>
+  <button id="btnLock" hidden aria-label="Vergrendelen">Vergrendel</button>
+</header>
+<main>
+
+<!-- START: nog geen rooster -->
+<section id="scrStart" class="screen" hidden>
+  <div class="merk"><b>COMBATREADY</b><span>Train. Test. Perform.</span></div>
+  <div class="card">
+    <p class="lead">Nog niets op dit toestel.</p>
+    <p class="muted">Importeer het versleutelde roosterbestand (<b>G07_Rooster_….mpt</b>) of uitslagenbestand (<b>G07_MPT_….mpt</b>) van je groep. Je krijgt ze van je instructeur.</p>
+    <button class="btn" id="btnKiesEerste">Bestand importeren</button>
+    <div class="msg" id="msgStart"></div>
+  </div>
+  <div class="card small muted">
+    <div class="step"><i>1</i><div>Zet deze app eerst op je beginscherm: iPhone → deel-knop → <b>Zet op beginscherm</b>. Android → menu ⋮ → <b>App installeren</b>.</div></div>
+    <div class="step"><i>2</i><div>Sla het .mpt-bestand op in Bestanden / Downloads en importeer het hier.</div></div>
+    <div class="step"><i>3</i><div>Daarna werkt de app zonder internet. Je log staat alleen op dit toestel.</div></div>
+  </div>
+</section>
+
+<!-- SLOT -->
+<section id="scrLock" class="screen" hidden>
+  <div class="merk"><b>COMBATREADY</b><span>Train. Test. Perform.</span></div>
+  <div class="card">
+    <h2>Rooster openen</h2>
+    <p class="muted small" id="lockInfo"></p>
+    <div style="display:flex;gap:8px">
+      <input type="text" class="pw" id="pwUnlock" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Wachtwoord" aria-label="Wachtwoord" style="flex:1">
+      <button class="btn" type="button" id="btnUnlock" style="width:auto;margin:0;padding:12px 16px">Open</button>
+    </div>
+    <div class="msg" id="msgLock"></div>
+  </div>
+  <div style="text-align:center">
+    <button class="linkish" id="btnWipe">Alles van dit toestel wissen</button>
+  </div>
+</section>
+
+<!-- WEEK: drie tabbladen (Week, Trend, Inleveren), gekozen met de balk onderaan -->
+<section id="scrWeek" class="screen" hidden>
+  <div class="msg" id="msgWeek" style="margin:0 0 12px"></div>
+  <div id="tabWeek">
+    <div class="card" id="weekKeuze"></div>
+    <div class="held" id="tegels"></div>
+    <button type="button" class="card openles" id="openLes" hidden></button>
+    <div class="card">
+      <h2 id="weekTitel">Deze week</h2>
+      <div id="dagen"></div>
+    </div>
+  </div>
+  <div id="tabTrend" hidden>
+    <div class="card">
+      <h2>Belasting per week</h2>
+      <div id="trend"></div>
+    </div>
+  </div>
+  <div id="tabUitslagen" hidden>
+    <div class="msg" id="msgUitslagen" style="margin:0 0 12px"></div>
+    <div class="card" id="uitslagLeeg">
+      <h2>Uitslagen</h2>
+      <p class="muted small" id="uitslagLeegTekst"></p>
+    </div>
+    <div class="card zoek" id="uitslagZoek" hidden>
+      <label class="f" for="q" style="margin-top:0">V-nummer</label>
+      <input id="q" name="search-zoek" type="text" inputmode="numeric" maxlength="10" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="bijv. 452949" class="fill">
+      <div class="msg" id="msgZoek"></div>
+    </div>
+    <div id="person" class="uitslag"></div>
+    <p class="foot" id="uitslagInfo"></p>
+  </div>
+  <div id="tabInlever" hidden>
+    <div class="card">
+      <h2>Inleveren</h2>
+      <div id="inlever"></div>
+      <div class="msg" id="msgInlever"></div>
+    </div>
+  </div>
+  <div id="bestandBlok">
+    <div class="card" id="nieuwCard" hidden>
+      <h2 id="nieuwTitel">Nieuw rooster</h2>
+      <p class="muted small" id="nieuwInfo"></p>
+      <div style="display:flex;gap:8px">
+        <input type="text" class="pw" id="pwNieuw" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Wachtwoord" aria-label="Wachtwoord van het nieuwe bestand" style="flex:1">
+        <button class="btn" type="button" id="btnNieuwOpen" style="width:auto;margin:0;padding:12px 16px">Open</button>
+      </div>
+      <div class="msg" id="msgNieuw"></div>
+      <div style="text-align:center"><button class="linkish" type="button" id="btnNieuwStop">Annuleren</button></div>
+    </div>
+    <div style="text-align:center"><button class="linkish" type="button" id="btnNieuw">Bestand van je instructeur importeren (rooster, brievenbus of uitslagen)</button></div>
+    <p class="foot" id="dataInfo"></p>
+  </div>
+</section>
+
+<!-- LES -->
+<section id="scrLes" class="screen" hidden>
+  <button class="back" type="button" id="btnTerug">‹ Week</button>
+  <div class="card" id="lesKop"></div>
+  <div class="card">
+    <h2>Horloge</h2>
+    <div id="fitKort"></div>
+    <button class="btn sec" type="button" id="btnFit">Horlogebestand toevoegen (.fit)</button>
+    <div class="msg" id="msgFit"></div>
+    <div style="text-align:center"><button class="linkish" type="button" id="btnFitWis" hidden>Horlogebestand verwijderen</button></div>
+  </div>
+  <div class="card">
+    <h2>Loggen</h2>
+    <div class="keuze2" role="group" aria-label="Status">
+      <button type="button" id="btnGedaan" aria-pressed="false">Gedaan</button>
+      <button type="button" id="btnNiet" aria-pressed="false">Niet gedaan</button>
+    </div>
+    <div id="gedaanVelden" hidden>
+      <label class="f" id="zwaarteLabel">Zwaarte (1 = heel licht, 10 = maximaal)</label>
+      <div class="zwaarte" id="zwaarte" role="group" aria-labelledby="zwaarteLabel"></div>
+      <label class="f" for="minuten">Duur in minuten</label>
+      <input id="minuten" name="search-minuten" type="text" inputmode="numeric" maxlength="3" autocomplete="off" autocorrect="off" spellcheck="false" class="fill" placeholder="bijv. 45">
+    </div>
+    <button class="btn" type="button" id="btnOpslaan">Opslaan</button>
+    <div class="msg" id="msgLes"></div>
+    <div style="text-align:center"><button class="linkish" type="button" id="btnLogWis" hidden>Log van deze les wissen</button></div>
+  </div>
+  <div id="analyse"></div>
+</section>
+
+<div id="cover" hidden><div class="merk"><b>COMBATREADY</b><span>Train. Test. Perform.</span></div></div>
+<input type="file" id="fileIn" hidden>
+<input type="file" id="fitIn" hidden>
+</main>
+<nav class="tabs" id="tabs" aria-label="Onderdelen" hidden>
+  <button type="button" id="navWeek"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Week</button>
+  <button type="button" id="navTrend"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h16M8 15l4-5 3 3 4-6"/></svg>Trend</button>
+  <button type="button" id="navUitslagen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 3h6v3H9zM9 11h6M9 15h4"/></svg>Uitslagen</button>
+  <button type="button" id="navInlever"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>Inleveren</button>
+</nav>
+<script>
+"use strict";
+/*
+ * Basis: wat de log-app en Beheer delen. Schermhulpjes, opslag (IndexedDB),
+ * afdekscherm met automatisch slot, en bestanden inlezen en afgeven.
+ */
+(function (root) {
+  const $ = (s) => document.querySelector(s);
+
+  function el(tag, attrs, ...kids) {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (v === null || v === undefined) continue;
+      if (k === "text") n.textContent = v; else n.setAttribute(k, v);
+    }
+    n.append(...kids.filter(Boolean));
+    return n;
+  }
+  function msg(node, text, kind) {
+    node.textContent = text || "";
+    node.className = "msg" + (text ? " show " + (kind || "err") : "");
+    if (text && node.scrollIntoView) node.scrollIntoView({ block: "center" });   // melding altijd in beeld; midden, want onderaan zit op iPhone de balk van Safari ervoor
+  }
+  function busy(btn, on, label) {
+    btn.disabled = on;
+    btn.textContent = "";
+    if (on) btn.append(el("span", { class: "spinner" }));
+    btn.append(label);
+  }
+
+  /** Opslag op het toestel. Alleen versleutelde inhoud erin zetten. Fouten worden doorgegeven, niet ingeslikt. */
+  function maakOpslag(dbNaam) {
+    const open = () => new Promise((res, rej) => {
+      try {
+        const r = indexedDB.open(dbNaam, 1);
+        r.onupgradeneeded = () => r.result.createObjectStore("kv");
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      } catch (e) { rej(e); }
+    });
+    const schrijf = async (werk) => {
+      const db = await open();
+      await new Promise((res, rej) => {
+        const t = db.transaction("kv", "readwrite");
+        werk(t.objectStore("kv"));
+        t.oncomplete = res; t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+      });
+    };
+    return {
+      async get(k) {
+        const db = await open();
+        return new Promise((res, rej) => { const q = db.transaction("kv").objectStore("kv").get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); });
+      },
+      // Schrijft alles in één keer: of alles is bewaard, of niets.
+      setAlles: (paren) => schrijf((store) => { for (const [k, v] of Object.entries(paren)) store.put(v, k); }),
+      wisAlles: () => schrijf((store) => store.clear())
+    };
+  }
+
+  /** Afdekscherm bij app-wissel en automatisch slot na stilte of achtergrond. */
+  function bewaakSlot(opties) {
+    const { moetDekken, opInactief, idleMs, hiddenMs } = opties;
+    let idleTimer = null, hiddenAt = 0, hiddenTik = 0;
+    const dek = (aan) => { $("#cover").hidden = !aan; };
+    const stop = () => clearTimeout(idleTimer);
+    const arm = () => { stop(); if (moetDekken()) idleTimer = setTimeout(opInactief, idleMs); };
+    addEventListener("blur", () => { if (moetDekken()) dek(true); });
+    addEventListener("focus", () => dek(false));
+    addEventListener("pagehide", () => dek(true));
+    addEventListener("pageshow", () => dek(false));
+    document.addEventListener("visibilitychange", () => dek(document.hidden && moetDekken()));
+    ["pointerdown", "keydown", "scroll"].forEach((ev) => addEventListener(ev, arm, { passive: true }));
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) { hiddenAt = Date.now(); hiddenTik = performance.now(); return; }
+      if (!moetDekken() || !hiddenAt) return;
+      // Twee klokken: de wandklok telt door tijdens slaap, de teller kan niet worden teruggezet.
+      const weg = Date.now() - hiddenAt;
+      if (weg > hiddenMs || weg < 0 || performance.now() - hiddenTik > hiddenMs) opInactief();
+    });
+    return { arm, stop };
+  }
+
+  /** Leest een JSON-bestand. Geeft null bij te groot of geen JSON. */
+  async function leesJson(file, maxBytes) {
+    if (file.size > maxBytes) return null;
+    try { return JSON.parse((await file.text()).replace(/^\uFEFF/, "")); } catch (_) { return null; }   // Excel/VBA zet soms een BOM vooraan
+  }
+
+  /** Geeft een bestand af: via het deelmenu van de telefoon als dat kan, anders als download. Geeft "gedeeld", "gedownload" of "gestopt". */
+  async function geefBestand(naam, tekst) {
+    const file = new File([tekst], naam, { type: "application/octet-stream" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file] }); return "gedeeld"; }   // zonder titel: iOS deelt die anders als los tekstje mee
+      catch (e) { if (e && e.name === "AbortError") return "gestopt"; }
+    }
+    const url = URL.createObjectURL(file);
+    const a = el("a", { href: url, download: naam });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    return "gedownload";
+  }
+
+  const tweeCijfers = (n) => String(n).padStart(2, "0");
+  const datumNu = (d) => d.getFullYear() + "-" + tweeCijfers(d.getMonth() + 1) + "-" + tweeCijfers(d.getDate());
+  const datumTijdNu = (d) => tweeCijfers(d.getDate()) + "-" + tweeCijfers(d.getMonth() + 1) + "-" + d.getFullYear() + " " + tweeCijfers(d.getHours()) + ":" + tweeCijfers(d.getMinutes());
+
+  root.Basis = Object.freeze({ $, el, msg, busy, maakOpslag, bewaakSlot, leesJson, geefBestand, datumNu, datumTijdNu });
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+"use strict";
+/*
+ * FIT-lezer (minimaal). Leest uit een activiteitbestand alleen de velden op de
+ * witte lijst hieronder. Alles wat daar niet op staat (posities, serienummer,
+ * gebruikersprofiel, HRV, slaap) wordt overgeslagen zonder het te decoderen.
+ * Geen externe code. Werkt in de browser (globaal) en in Node (tests).
+ */
+(function (root) {
+  const MAX_BYTES = 20 * 1024 * 1024;
+  const MAX_PUNTEN = 400000;
+  const MAX_SESSIES = 200;
+  const MAX_RONDEN = 5000;
+  const FIT_EPOCH_SEC = 631065600; // 1989-12-31T00:00:00Z in Unix-seconden
+  const BESTANDSTYPE_ACTIVITEIT = 4;
+  const MSG_BESTAND = 0;
+  const MSG_SESSIE = 18;
+  const MSG_RONDE = 19;
+  const MSG_PUNT = 20;
+  const VELD_TIJDSTEMPEL = 253;
+  const KOP_KORT = 12;
+  const KOP_LANG = 14;
+
+  // Witte lijst: bericht -> veldnummer -> wat we ermee doen.
+  // Record-velden 0 en 1 (positie) en sessie-velden 3 en 4 (startpositie)
+  // staan er bewust niet in.
+  const VELDEN = Object.freeze({
+    [MSG_BESTAND]: { 0: { naam: "type" } },
+    [MSG_SESSIE]: {
+      2: { naam: "start" },
+      5: { naam: "sport" },
+      6: { naam: "subSport" },
+      7: { naam: "totaalSec", schaal: 1000 },
+      8: { naam: "duurSec", schaal: 1000 },
+      9: { naam: "afstandM", schaal: 100 },
+      14: { naam: "snelheid", schaal: 1000 },
+      16: { naam: "gemHartslag" },
+      17: { naam: "maxHartslag" },
+      22: { naam: "stijgingM" },
+      124: { naam: "snelheidPrecies", schaal: 1000 }
+    },
+    [MSG_RONDE]: {
+      2: { naam: "start" },
+      8: { naam: "duurSec", schaal: 1000 },
+      9: { naam: "afstandM", schaal: 100 },
+      13: { naam: "snelheid", schaal: 1000 },
+      15: { naam: "gemHartslag" },
+      16: { naam: "maxHartslag" },
+      110: { naam: "snelheidPrecies", schaal: 1000 }
+    },
+    [MSG_PUNT]: {
+      253: { naam: "t" },
+      2: { naam: "hoogte", schaal: 5, offset: 500 },
+      3: { naam: "hartslag" },
+      5: { naam: "afstandM", schaal: 100 },
+      6: { naam: "snelheid", schaal: 1000 },
+      73: { naam: "snelheidPrecies", schaal: 1000 },
+      78: { naam: "hoogtePrecies", schaal: 5, offset: 500 }
+    }
+  });
+
+  // Basistypes (index = basistype & 0x1F). Alleen gehele getallen; de velden
+  // op de witte lijst zijn nooit tekst of kommagetal.
+  const TYPES = Object.freeze({
+    0: { grootte: 1, lees: "getUint8", ongeldig: 0xff },
+    1: { grootte: 1, lees: "getInt8", ongeldig: 0x7f },
+    2: { grootte: 1, lees: "getUint8", ongeldig: 0xff },
+    3: { grootte: 2, lees: "getInt16", ongeldig: 0x7fff },
+    4: { grootte: 2, lees: "getUint16", ongeldig: 0xffff },
+    5: { grootte: 4, lees: "getInt32", ongeldig: 0x7fffffff },
+    6: { grootte: 4, lees: "getUint32", ongeldig: 0xffffffff },
+    10: { grootte: 1, lees: "getUint8", ongeldig: 0 },
+    11: { grootte: 2, lees: "getUint16", ongeldig: 0 },
+    12: { grootte: 4, lees: "getUint32", ongeldig: 0 }
+  });
+
+  const MELDINGEN = Object.freeze({
+    TE_GROOT: "Dit bestand is te groot.",
+    GEEN_FIT: "Dit is geen FIT-bestand.",
+    AFGEKAPT: "Het bestand is niet compleet.",
+    BESCHADIGD: "Het bestand is beschadigd.",
+    GEEN_ACTIVITEIT: "Dit is geen activiteitbestand van een horloge.",
+    GEEN_SESSIE: "In dit bestand staat geen training.",
+    TE_LANG: "Dit bestand bevat te veel meetpunten."
+  });
+
+  class FitFout extends Error {
+    constructor(code) {
+      super(MELDINGEN[code] || code);
+      this.name = "FitFout";
+      this.code = code;
+    }
+  }
+
+  const CRC_TABEL = [
+    0x0000, 0xcc01, 0xd801, 0x1400, 0xf001, 0x3c00, 0x2800, 0xe401,
+    0xa001, 0x6c00, 0x7800, 0xb401, 0x5000, 0x9c01, 0x8801, 0x4400
+  ];
+
+  function crc16(bytes, begin, eind) {
+    let crc = 0;
+    for (let i = begin; i < eind; i++) {
+      const b = bytes[i];
+      let tmp = CRC_TABEL[crc & 0xf];
+      crc = ((crc >> 4) & 0x0fff) ^ tmp ^ CRC_TABEL[b & 0xf];
+      tmp = CRC_TABEL[crc & 0xf];
+      crc = ((crc >> 4) & 0x0fff) ^ tmp ^ CRC_TABEL[(b >> 4) & 0xf];
+    }
+    return crc;
+  }
+
+  function leesWaarde(view, pos, veld, isLittle) {
+    const type = TYPES[veld.basis & 0x1f];
+    if (!type || type.grootte !== veld.grootte) return null;
+    const ruw = view[type.lees](pos, isLittle);
+    return ruw === type.ongeldig ? null : ruw;
+  }
+
+  function schaal(ruw, regel) {
+    if (ruw === null || ruw === undefined) return null;
+    const gedeeld = regel.schaal ? ruw / regel.schaal : ruw;
+    return regel.offset ? gedeeld - regel.offset : gedeeld;
+  }
+
+  function eerste(a, b) {
+    return a !== null && a !== undefined ? a : (b !== undefined ? b : null);
+  }
+
+  function naarUnix(fitSec) {
+    return fitSec === null || fitSec === undefined ? null : fitSec + FIT_EPOCH_SEC;
+  }
+
+  function maakSessie(w) {
+    return {
+      start: naarUnix(w.start),
+      sport: eerste(w.sport),
+      subSport: eerste(w.subSport),
+      duurSec: eerste(w.duurSec),
+      totaalSec: eerste(w.totaalSec),
+      afstandM: eerste(w.afstandM),
+      gemHartslag: eerste(w.gemHartslag),
+      maxHartslag: eerste(w.maxHartslag),
+      gemSnelheidMs: eerste(w.snelheidPrecies, w.snelheid),
+      stijgingM: eerste(w.stijgingM)
+    };
+  }
+
+  function maakRonde(w) {
+    return {
+      start: naarUnix(w.start),
+      duurSec: eerste(w.duurSec),
+      afstandM: eerste(w.afstandM),
+      gemHartslag: eerste(w.gemHartslag),
+      maxHartslag: eerste(w.maxHartslag),
+      gemSnelheidMs: eerste(w.snelheidPrecies, w.snelheid)
+    };
+  }
+
+  function maakPunt(w, tijdUitKop) {
+    return {
+      t: naarUnix(eerste(w.t, tijdUitKop)),
+      hartslag: eerste(w.hartslag),
+      afstandM: eerste(w.afstandM),
+      snelheidMs: eerste(w.snelheidPrecies, w.snelheid),
+      hoogteM: eerste(w.hoogtePrecies, w.hoogte)
+    };
+  }
+
+  function leesDefinitie(bytes, view, pos, eind, heeftOntwikkelVelden) {
+    if (pos + 5 > eind) throw new FitFout("AFGEKAPT");
+    const isLittle = bytes[pos + 1] === 0;
+    const globaal = view.getUint16(pos + 2, isLittle);
+    const aantal = bytes[pos + 4];
+    let p = pos + 5;
+    if (p + aantal * 3 > eind) throw new FitFout("AFGEKAPT");
+    const velden = [];
+    let lengte = 0;
+    for (let i = 0; i < aantal; i++, p += 3) {
+      velden.push({ nummer: bytes[p], grootte: bytes[p + 1], basis: bytes[p + 2] });
+      lengte += bytes[p + 1];
+    }
+    if (heeftOntwikkelVelden) {
+      if (p + 1 > eind) throw new FitFout("AFGEKAPT");
+      const aantalExtra = bytes[p++];
+      if (p + aantalExtra * 3 > eind) throw new FitFout("AFGEKAPT");
+      for (let i = 0; i < aantalExtra; i++, p += 3) lengte += bytes[p + 1];
+    }
+    const definitie = { globaal, isLittle, velden, lengte, gewenst: VELDEN[globaal] || null };
+    return { definitie, pos: p };
+  }
+
+  // Leest één databericht. Geeft de gevonden waarden (alleen witte lijst) en
+  // de tijdstempel terug; de rest van het bericht wordt overgeslagen.
+  function leesData(view, pos, definitie) {
+    const waarden = {};
+    let tijd = null;
+    let p = pos;
+    for (const veld of definitie.velden) {
+      if (veld.nummer === VELD_TIJDSTEMPEL && veld.grootte === 4) {
+        tijd = leesWaarde(view, p, { basis: 6, grootte: 4 }, definitie.isLittle);
+      }
+      const regel = definitie.gewenst && definitie.gewenst[veld.nummer];
+      if (regel) waarden[regel.naam] = schaal(leesWaarde(view, p, veld, definitie.isLittle), regel);
+      p += veld.grootte;
+    }
+    return { waarden, tijd };
+  }
+
+  function verwerk(definitie, waarden, tijd, uit) {
+    if (definitie.globaal === MSG_BESTAND && uit.bestandstype === null) {
+      uit.bestandstype = eerste(waarden.type);
+    } else if (definitie.globaal === MSG_SESSIE) {
+      if (uit.sessies.length >= MAX_SESSIES) throw new FitFout("TE_LANG");
+      uit.sessies.push(maakSessie(waarden));
+    } else if (definitie.globaal === MSG_RONDE) {
+      if (uit.ronden.length >= MAX_RONDEN) throw new FitFout("TE_LANG");
+      uit.ronden.push(maakRonde(waarden));
+    } else if (definitie.globaal === MSG_PUNT) {
+      if (uit.punten.length >= MAX_PUNTEN) throw new FitFout("TE_LANG");
+      uit.punten.push(maakPunt(waarden, tijd));
+    }
+  }
+
+  function controleerKop(bytes, view, begin) {
+    const kop = bytes[begin];
+    if (kop !== KOP_KORT && kop !== KOP_LANG) throw new FitFout("GEEN_FIT");
+    if (begin + kop > bytes.length) throw new FitFout("AFGEKAPT");
+    const merk = String.fromCharCode(bytes[begin + 8], bytes[begin + 9], bytes[begin + 10], bytes[begin + 11]);
+    if (merk !== ".FIT") throw new FitFout("GEEN_FIT");
+    const dataBegin = begin + kop;
+    const dataEind = dataBegin + view.getUint32(begin + 4, true);
+    if (dataEind + 2 > bytes.length) throw new FitFout("AFGEKAPT");
+    if (kop === KOP_LANG) {
+      const kopCrc = view.getUint16(begin + 12, true);
+      if (kopCrc !== 0 && kopCrc !== crc16(bytes, begin, begin + 12)) throw new FitFout("BESCHADIGD");
+    }
+    if (view.getUint16(dataEind, true) !== crc16(bytes, begin, dataEind)) throw new FitFout("BESCHADIGD");
+    return { dataBegin, dataEind };
+  }
+
+  function tijdUitKorteKop(laatsteTijd, kop) {
+    if (laatsteTijd === null) return null;
+    const verschil = kop & 0x1f;
+    const basis = ((laatsteTijd & 0xffffffe0) >>> 0) + verschil;
+    return verschil < (laatsteTijd & 0x1f) ? basis + 0x20 : basis;
+  }
+
+  // Leest één FIT-deel (een bestand kan uit meerdere delen achter elkaar bestaan).
+  function leesDeel(bytes, view, begin, uit) {
+    const { dataBegin, dataEind } = controleerKop(bytes, view, begin);
+    const definities = new Map();
+    let laatsteTijd = null;
+    let pos = dataBegin;
+    while (pos < dataEind) {
+      const kop = bytes[pos++];
+      const isKort = (kop & 0x80) !== 0;
+      if (!isKort && (kop & 0x40)) {
+        const gelezen = leesDefinitie(bytes, view, pos, dataEind, (kop & 0x20) !== 0);
+        definities.set(kop & 0x0f, gelezen.definitie);
+        pos = gelezen.pos;
+        continue;
+      }
+      const definitie = definities.get(isKort ? (kop >> 5) & 0x03 : kop & 0x0f);
+      if (!definitie) throw new FitFout("BESCHADIGD");
+      if (pos + definitie.lengte > dataEind) throw new FitFout("AFGEKAPT");
+      const { waarden, tijd } = leesData(view, pos, definitie);
+      const tijdNu = isKort ? tijdUitKorteKop(laatsteTijd, kop) : tijd;
+      if (tijdNu !== null) laatsteTijd = tijdNu;
+      verwerk(definitie, waarden, tijdNu, uit);
+      pos += definitie.lengte;
+    }
+    return dataEind + 2;
+  }
+
+  /**
+   * Leest een FIT-activiteitbestand.
+   * @param {ArrayBuffer|Uint8Array} invoer
+   * @returns {{sessies: object[], ronden: object[], punten: object[]}} tijden in Unix-seconden,
+   *   afstand in meters, snelheid in m/s, hoogte in meters. Ontbrekend = null.
+   * @throws {FitFout} met .code en een Nederlandse melding
+   */
+  function leesFit(invoer) {
+    const bytes = invoer instanceof Uint8Array ? invoer : new Uint8Array(invoer);
+    if (bytes.length > MAX_BYTES) throw new FitFout("TE_GROOT");
+    if (bytes.length < KOP_KORT + 2) throw new FitFout("GEEN_FIT");
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    const uit = { bestandstype: null, sessies: [], ronden: [], punten: [] };
+    let pos = 0;
+    while (pos < bytes.length) pos = leesDeel(bytes, view, pos, uit);
+    if (uit.bestandstype !== BESTANDSTYPE_ACTIVITEIT) throw new FitFout("GEEN_ACTIVITEIT");
+    if (uit.sessies.length === 0) throw new FitFout("GEEN_SESSIE");
+    return { sessies: uit.sessies, ronden: uit.ronden, punten: uit.punten };
+  }
+
+  const api = Object.freeze({ leesFit, FitFout, crc16, MAX_BYTES });
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.FitLezer = api;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+"use strict";
+/*
+ * Kluis: versleuteling, overgenomen van de MPT-apps.
+ * PBKDF2-SHA256 (600.000 rondes) -> AES-GCM-256. Roosterbestanden hebben
+ * exact de opbouw die Beheer in de instructie-app maakt. Het logboek op het
+ * toestel gebruikt hetzelfde recept met een eigen formaatnaam.
+ */
+(function (root) {
+  const FORMAAT_ENC = "mpt-enc";
+  const FORMAAT_LOG = "mpt-log-enc";
+  const ONVERSLEUTELDE_FORMATEN = ["mpt-export", "mpt-rooster"];
+  const INHOUD_ROOSTER = "rooster";
+  const INHOUD_BRIEVENBUS = "brievenbus";
+  const SOORT_UITSLAGEN = "uitslagen";      // MPT-uitslagen: het omhulsel heeft (net als in de oude apps) géén veld inhoud
+  const FORMAAT_BRIEVENBUS = "mpt-brievenbus";
+  const ITER = 600000;
+  const SALT_BYTES = 16;
+  const IV_BYTES = 12;
+  const MAX_NAAM = 60;
+  const enc = new TextEncoder();
+  const dec = new TextDecoder();
+
+  const MELDINGEN = Object.freeze({
+    GEEN_MPT: "Dit is geen versleuteld .mpt-bestand.",
+    ONVERSLEUTELD: "Dit bestand is nog niet versleuteld. Vraag het .mpt-bestand aan je instructeur.",
+    GEEN_ROOSTER: "Dit is geen roosterbestand. Kies het bestand met 'Rooster' in de naam.",
+    ITER: "Dit bestand heeft afwijkende beveiligingsinstellingen en wordt geweigerd.",
+    WACHTWOORD: "Wachtwoord klopt niet, of het bestand is beschadigd.",
+    CODE: "De code op dit bestand klopt niet met de inhoud. Vraag een nieuw bestand.",
+    LOG: "Je logboek kon niet geopend worden met dit wachtwoord.",
+    GEEN_BRIEVENBUS: "Dit brievenbus-bestand heeft een onbekende opbouw. Vraag een nieuw bestand.",
+    GEEN_UITSLAGEN: "Dit uitslagenbestand heeft een onbekende opbouw. Vraag een nieuw bestand."
+  });
+
+  class KluisFout extends Error {
+    constructor(code) {
+      super(MELDINGEN[code] || code);
+      this.name = "KluisFout";
+      this.code = code;
+    }
+  }
+
+  const b64 = (u8) => {
+    let s = "";
+    for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+    return btoa(s);
+  };
+  const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  const isTekst = (v) => typeof v === "string" && v.length > 0;
+  const willekeurig = (n) => crypto.getRandomValues(new Uint8Array(n));
+
+  async function deriveKey(pw, salt, iter) {
+    const base = await crypto.subtle.importKey("raw", enc.encode(pw), "PBKDF2", false, ["deriveKey"]);
+    return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: iter, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+  }
+
+  // Zelfde AAD als de MPT-apps: formaat|versie|iter|gemaakt(|inhoud)
+  const aadOf = (w) => enc.encode([w.formaat, w.versie, w.iter, w.gemaakt].concat(w.inhoud ? [w.inhoud] : []).join("|"));
+  const aadLog = (w) => enc.encode([w.formaat, w.versie, w.iter].join("|"));
+
+  function heeftOmhulsel(w, formaat) {
+    return Boolean(w) && typeof w === "object" && w.formaat === formaat && isTekst(w.salt) && isTekst(w.iv) && isTekst(w.data);
+  }
+
+  /** Controleert een ingelezen .mpt-bestand. Geeft de soort terug ("rooster", "brievenbus" of "uitslagen") of gooit KluisFout. */
+  function soortBestand(w) {
+    if (w && ONVERSLEUTELDE_FORMATEN.includes(w.formaat)) throw new KluisFout("ONVERSLEUTELD");
+    if (!heeftOmhulsel(w, FORMAAT_ENC)) throw new KluisFout("GEEN_MPT");
+    if (w.iter !== ITER) throw new KluisFout("ITER");
+    if (w.inhoud === undefined) return SOORT_UITSLAGEN;
+    if (w.inhoud !== INHOUD_ROOSTER && w.inhoud !== INHOUD_BRIEVENBUS) throw new KluisFout("GEEN_ROOSTER");
+    return w.inhoud;
+  }
+
+  /** Controleert een roosterbestand vóór het wordt bewaard. Geeft het bestand terug of gooit KluisFout. */
+  function controleerRoosterBestand(w) {
+    if (soortBestand(w) !== INHOUD_ROOSTER) throw new KluisFout("GEEN_ROOSTER");
+    return w;
+  }
+
+  /** Ontsleutelt een roosterbestand en controleert de groepscode. */
+  async function openRooster(w, pw) {
+    controleerRoosterBestand(w);
+    const geopend = await openMpt(w, pw);
+    return { rooster: geopend.inhoud, code: geopend.code, naam: geopend.naam };
+  }
+
+  /** Ontsleutelt het brievenbus-bestand van de groep. Geeft { publiek, gemaakt, code }. */
+  async function openBrievenbusBestand(w, pw) {
+    if (soortBestand(w) !== INHOUD_BRIEVENBUS) throw new KluisFout("GEEN_BRIEVENBUS");
+    const { inhoud, code } = await openMpt(w, pw);
+    if (!inhoud || inhoud.formaat !== FORMAAT_BRIEVENBUS || !isTekst(inhoud.publiek)) throw new KluisFout("GEEN_BRIEVENBUS");
+    return { publiek: inhoud.publiek, gemaakt: String(inhoud.gemaakt || ""), code };
+  }
+
+  /** Ontsleutelt een uitslagenbestand (MPT-uitslagen van de groep) en controleert de groepscode en de opbouw. */
+  async function openUitslagen(w, pw) {
+    if (soortBestand(w) !== SOORT_UITSLAGEN) throw new KluisFout("GEEN_UITSLAGEN");
+    const { inhoud, code, naam } = await openMpt(w, pw);
+    if (!inhoud || typeof inhoud !== "object" || !Array.isArray(inhoud.personen)) throw new KluisFout("GEEN_UITSLAGEN");
+    return { data: inhoud, code, naam };
+  }
+
+  /**
+   * Instructeurs: versleutelt een rooster of uitslagen tot een .mpt-bestand voor de groep. Zelfde opbouw als
+   * Beheer in de instructie-app: code leesbaar op het omhulsel, code en naam ook versleuteld erin (groepInfo).
+   */
+  async function versleutelBestand(inhoud, pw, soort, code, naam) {
+    const salt = willekeurig(SALT_BYTES), iv = willekeurig(IV_BYTES);
+    const w = { formaat: FORMAAT_ENC, versie: 1, iter: ITER, gemaakt: String(inhoud.gemaakt || ""), ...(soort === INHOUD_ROOSTER ? { inhoud: INHOUD_ROOSTER } : {}) };
+    const metInfo = code ? { ...inhoud, groepInfo: { code: String(code), naam: String(naam || "").slice(0, MAX_NAAM) } } : inhoud;
+    const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: aadOf(w) }, await deriveKey(pw, salt, ITER), enc.encode(JSON.stringify(metInfo)));
+    return { ...w, ...(code ? { code: String(code) } : {}), salt: b64(salt), iv: b64(iv), data: b64(new Uint8Array(ct)) };
+  }
+
+  /** Beheer: maakt het brievenbus-bestand voor de mariniers, versleuteld met het groepswachtwoord (zelfde opbouw als een roosterbestand). */
+  async function maakBrievenbusBestand(publiek, pw, code, gemaakt) {
+    const salt = willekeurig(SALT_BYTES), iv = willekeurig(IV_BYTES);
+    const w = { formaat: FORMAAT_ENC, versie: 1, iter: ITER, gemaakt: String(gemaakt || ""), inhoud: INHOUD_BRIEVENBUS };
+    const inhoud = { formaat: FORMAAT_BRIEVENBUS, versie: 1, gemaakt: w.gemaakt, publiek, groepInfo: { code: String(code || ""), naam: "" } };
+    const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: aadOf(w) }, await deriveKey(pw, salt, ITER), enc.encode(JSON.stringify(inhoud)));
+    return { ...w, ...(code ? { code: String(code) } : {}), salt: b64(salt), iv: b64(iv), data: b64(new Uint8Array(ct)) };
+  }
+
+  async function openMpt(w, pw) {
+    let rooster;
+    try {
+      const key = await deriveKey(pw, unb64(w.salt), w.iter);
+      const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(w.iv), additionalData: aadOf(w) }, key, unb64(w.data));
+      rooster = JSON.parse(dec.decode(pt));
+    } catch (_) {
+      throw new KluisFout("WACHTWOORD");
+    }
+    const info = rooster && rooster.groepInfo;
+    const code = w.code || "";
+    if ((info ? String(info.code || "") : "") !== code) throw new KluisFout("CODE");
+    return { inhoud: rooster, code, naam: info && info.naam ? String(info.naam).slice(0, MAX_NAAM) : "" };
+  }
+
+  /** Nieuwe sleutel voor het logboek (bij eerste gebruik of een nieuw wachtwoord). */
+  async function nieuweLogSleutel(pw) {
+    const salt = willekeurig(SALT_BYTES);
+    return { sleutel: await deriveKey(pw, salt, ITER), salt: b64(salt) };
+  }
+
+  /** Sleutel voor een bestaand, versleuteld logboek. */
+  async function bestaandeLogSleutel(pw, w) {
+    if (!heeftOmhulsel(w, FORMAAT_LOG) || w.iter !== ITER) throw new KluisFout("LOG");
+    try {
+      return { sleutel: await deriveKey(pw, unb64(w.salt), ITER), salt: w.salt };
+    } catch (_) {
+      throw new KluisFout("LOG");
+    }
+  }
+
+  async function versleutelLog(log, logSleutel) {
+    const iv = willekeurig(IV_BYTES);
+    const w = { formaat: FORMAAT_LOG, versie: 1, iter: ITER };
+    const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: aadLog(w) }, logSleutel.sleutel, enc.encode(JSON.stringify(log)));
+    return { ...w, salt: logSleutel.salt, iv: b64(iv), data: b64(new Uint8Array(ct)) };
+  }
+
+  async function ontsleutelLog(w, logSleutel) {
+    try {
+      const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(w.iv), additionalData: aadLog(w) }, logSleutel.sleutel, unb64(w.data));
+      return JSON.parse(dec.decode(pt));
+    } catch (_) {
+      throw new KluisFout("LOG");
+    }
+  }
+
+  const api = Object.freeze({ KluisFout, ITER, FORMAAT_ENC, FORMAAT_LOG, SOORT_UITSLAGEN, soortBestand, controleerRoosterBestand, openRooster, openUitslagen, openBrievenbusBestand, maakBrievenbusBestand, versleutelBestand, nieuweLogSleutel, bestaandeLogSleutel, versleutelLog, ontsleutelLog });
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.Kluis = api;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+"use strict";
+/*
+ * Logboek: rekenregels zonder scherm of opslag. Alle functies geven een
+ * nieuw object terug en wijzigen hun invoer niet.
+ */
+(function (root) {
+  const STATUS_GEDAAN = "gedaan";
+  const STATUS_NIET = "niet";
+  const MIN_ZWAARTE = 1;
+  const MAX_ZWAARTE = 10;
+  const MAX_MINUTEN = 600;
+  const STANDAARD_DAGEN = ["Ma", "Di", "Wo", "Do", "Vr"];
+
+  class LogFout extends Error {
+    constructor(melding) {
+      super(melding);
+      this.name = "LogFout";
+    }
+  }
+
+  const leegLog = () => ({ versie: 1, items: {}, keuze: null, maxHs: null, vnr: null, bus: null });
+  const sleutelVan = (meso, wk, dag, nr) => JSON.stringify([String(meso), String(wk), dag, String(nr)]);
+  const tekst = (v) => (v === undefined || v === null ? "" : String(v));
+
+  function controleerLog(x) {
+    const isGoed = x && typeof x === "object" && x.versie === 1 && x.items && typeof x.items === "object" && !Array.isArray(x.items);
+    if (!isGoed) throw new LogFout("Het logboek op dit toestel heeft een onbekende opbouw.");
+    return { versie: 1, items: x.items, keuze: x.keuze && typeof x.keuze === "object" ? x.keuze : null, maxHs: Number.isInteger(x.maxHs) ? x.maxHs : null,
+      vnr: typeof x.vnr === "string" ? x.vnr : null,
+      bus: x.bus && typeof x.bus === "object" && typeof x.bus.publiek === "string" ? { publiek: x.bus.publiek, gemaakt: tekst(x.bus.gemaakt) } : null };
+  }
+
+  function geldigeMesos(rooster) {
+    const mesos = rooster && Array.isArray(rooster.mesos) ? rooster.mesos : [];
+    return mesos.filter((m) => m && Array.isArray(m.weken) && m.weken.length > 0);
+  }
+
+  class RoosterFout extends LogFout {
+    constructor() { super("Dit rooster heeft een onbekende opbouw. Vraag een nieuw roosterbestand aan je instructeur."); this.name = "RoosterFout"; }
+  }
+  /** Controleert een ontsleuteld rooster vóór het wordt gebruikt of bewaard. Geeft het rooster terug of gooit RoosterFout. */
+  function controleerRooster(rooster) {
+    const isObject = (v) => Boolean(v) && typeof v === "object" && !Array.isArray(v);
+    if (!isObject(rooster) || !geldigeMesos(rooster).every((m) => m.weken.every(isObject))) throw new RoosterFout();
+    return rooster;
+  }
+
+  function dagNamen(meso) {
+    return Array.isArray(meso.dagen) && meso.dagen.length ? meso.dagen.map(String) : STANDAARD_DAGEN;
+  }
+
+  function lesVan(rooster, nr) {
+    const les = rooster.lessen && rooster.lessen[nr];
+    if (!les) return null;
+    return { d: tekst(les.d), les: tekst(les.les), zone: tekst(les.zone), km: tekst(les.km), opdr: tekst(les.opdr) };
+  }
+
+  /**
+   * De week als lijst voor het scherm: per dag de geplande les, plus lessen
+   * die wel gelogd zijn maar niet meer in het rooster staan (vervallen).
+   */
+  function weekItems(rooster, meso, week, log) {
+    const mesoNaam = String(meso.naam);
+    const wk = String(week.wk);
+    const gelogd = Object.entries(log.items).filter(([, e]) => e.meso === mesoNaam && e.wk === wk);
+    return dagNamen(meso).flatMap((dagNaam, dag) => {
+      const ruw = (week.dagen || [])[dag];
+      const nr = ruw ? String(ruw) : null;
+      const gepland = nr ? [{
+        sleutel: sleutelVan(mesoNaam, wk, dag, nr), dag, dagNaam, nr,
+        les: lesVan(rooster, nr), log: log.items[sleutelVan(mesoNaam, wk, dag, nr)] || null, isVervallen: false
+      }] : [];
+      const vervallen = gelogd.filter(([, e]) => e.dag === dag && e.nr !== nr).map(([sleutel, e]) => ({
+        sleutel, dag, dagNaam, nr: e.nr,
+        les: { d: tekst(e.d), les: tekst(e.les), zone: "", km: "", opdr: "" }, log: e, isVervallen: true
+      }));
+      const items = [...gepland, ...vervallen];
+      return items.length ? items : [{ sleutel: null, dag, dagNaam, nr: null, les: null, log: null, isVervallen: false }];
+    });
+  }
+
+  const MAX_DAG = 6;
+  /** Beheer: het rooster teruggebracht tot wat nodig is om open lessen te tonen: per meso en week de geplande lessen. */
+  function planVan(rooster) {
+    const lessenVan = (meso, week) => weekItems(rooster, meso, week, leegLog()).filter((i) => i.nr && i.dag <= MAX_DAG)
+      .map((i) => ({ dag: i.dag, nr: i.nr, d: i.les ? i.les.d : "", les: i.les ? i.les.les : "" }));
+    return { gemaakt: tekst(rooster.gemaakt), mesos: geldigeMesos(rooster).map((meso) => ({ naam: String(meso.naam),
+      weken: meso.weken.map((week) => ({ wk: String(week.wk), lessen: lessenVan(meso, week) })) })) };
+  }
+
+  function geheelGetal(v) {
+    const s = tekst(v).trim();
+    return /^\d{1,4}$/.test(s) ? Number(s) : null;
+  }
+
+  /** Controleert wat de marinier invult. Geeft { ok, waarde } of { ok: false, melding }. */
+  function valideerInvoer(invoer) {
+    if (invoer.status === STATUS_NIET) return { ok: true, waarde: { status: STATUS_NIET, zwaarte: null, minuten: null } };
+    if (invoer.status !== STATUS_GEDAAN) return { ok: false, melding: "Kies eerst 'Gedaan' of 'Niet gedaan'." };
+    const zwaarte = geheelGetal(invoer.zwaarte);
+    if (zwaarte === null || zwaarte < MIN_ZWAARTE || zwaarte > MAX_ZWAARTE) return { ok: false, melding: "Kies een zwaarte van 1 tot 10." };
+    const minuten = geheelGetal(invoer.minuten);
+    if (minuten === null || minuten < 1 || minuten > MAX_MINUTEN) return { ok: false, melding: "Vul de duur in minuten in (1 tot " + MAX_MINUTEN + ")." };
+    return { ok: true, waarde: { status: STATUS_GEDAAN, zwaarte, minuten } };
+  }
+
+  /** Legt een les vast. `item` komt uit weekItems, `waarde` uit valideerInvoer, `fit` is een activiteit of null. */
+  function metLog(log, mesoNaam, wk, item, waarde, nuIso, fit) {
+    const regel = {
+      ...waarde, meso: String(mesoNaam), wk: String(wk), dag: item.dag, nr: item.nr,
+      d: item.les ? item.les.d : "", les: item.les ? item.les.les : "", gewijzigd: nuIso,
+      ...(fit && waarde.status === STATUS_GEDAAN ? { fit } : {})
+    };
+    return { ...log, items: { ...log.items, [item.sleutel]: regel } };
+  }
+
+  function zonderLog(log, sleutel) {
+    const items = Object.fromEntries(Object.entries(log.items).filter(([k]) => k !== sleutel));
+    return { ...log, items };
+  }
+
+  const metKeuze = (log, meso, wk) => ({ ...log, keuze: { meso: String(meso), wk: String(wk) } });
+  const metMaxHs = (log, maxHs) => ({ ...log, maxHs });
+  const metVnr = (log, vnr) => ({ ...log, vnr });
+  const metBus = (log, publiek, gemaakt) => ({ ...log, bus: { publiek, gemaakt: tekst(gemaakt) } });
+  const afstandVan = (regel) => (regel && regel.fit && typeof regel.fit.afstandM === "number" ? regel.fit.afstandM : 0);
+  const belastingVan = (regel) => (regel && regel.status === STATUS_GEDAAN ? regel.zwaarte * regel.minuten : 0);
+
+  /** Totalen van een week. Belasting = zwaarte x minuten, opgeteld. */
+  function weekTotaal(items) {
+    const gepland = items.filter((i) => i.nr && !i.isVervallen);
+    const gedaan = items.filter((i) => i.log && i.log.status === STATUS_GEDAAN);
+    return {
+      gepland: gepland.length,
+      gedaan: gepland.filter((i) => i.log && i.log.status === STATUS_GEDAAN).length,
+      vervallenGedaan: gedaan.filter((i) => i.isVervallen).length,   // niet in de ring, wel in minuten en belasting
+      minuten: gedaan.reduce((som, i) => som + i.log.minuten, 0),
+      belasting: gedaan.reduce((som, i) => som + belastingVan(i.log), 0),
+      afstandM: gedaan.reduce((som, i) => som + afstandVan(i.log), 0)
+    };
+  }
+
+  /** Belasting en minuten per week van één meso, voor de trendgrafiek. */
+  function mesoTrend(rooster, meso, log) {
+    return meso.weken.map((week) => {
+      const totaal = weekTotaal(weekItems(rooster, meso, week, log));
+      return { wk: String(week.wk), belasting: totaal.belasting, minuten: totaal.minuten };
+    });
+  }
+
+  const api = Object.freeze({
+    LogFout, RoosterFout, controleerRooster, STATUS_GEDAAN, STATUS_NIET, MIN_ZWAARTE, MAX_ZWAARTE, MAX_MINUTEN,
+    leegLog, controleerLog, planVan, geldigeMesos, dagNamen, weekItems, valideerInvoer, metLog, zonderLog, metKeuze, metMaxHs, metVnr, metBus, belastingVan, weekTotaal, mesoTrend
+  });
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.Logboek = api;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+"use strict";
+/*
+ * Analyse: maakt van een ingelezen FIT-bestand een compacte activiteit die in
+ * het logboek past (samenvatting, uitgedunde grafiekreeks, hartslagverdeling,
+ * ronden). Rekent hartslagzones uit en zet getallen om in leesbare tekst.
+ * Geen scherm, geen opslag; functies wijzigen hun invoer niet.
+ */
+(function (root) {
+  const MAX_REEKS = 240;        // punten per grafiek na uitdunnen
+  const MAX_GAT_SEC = 10;       // langere gaten tussen meetpunten tellen als pauze
+  const MAX_RONDEN = 100;
+  const MIN_MAX_HS = 120;
+  const MAX_MAX_HS = 230;
+  const MIN_TEMPO_MS = 1;       // langzamer dan 1 m/s geldt als stilstaan in de tempografiek
+  const SPORT_OVERGANG = 3;
+  const SPORT_MULTI = 18;
+  const SPORT_NAMEN = Object.freeze({ 0: "Training", 1: "Hardlopen", 2: "Fietsen", 4: "Fitness", 5: "Zwemmen", 10: "Training", 11: "Wandelen", 12: "Langlaufen", 13: "Skiën", 15: "Roeien", 16: "Bergsport", 17: "Hiken", 18: "Multisport", 19: "Peddelen" });
+  const TEMPO_SPORTEN = [1, 11, 17];
+  // Zones als deel van de maximale hartslag (ondergrens t/m bovengrens).
+  const ZONES = Object.freeze([["Z1", 0.5], ["Z2", 0.6], ["Z3", 0.7], ["Z4", 0.8], ["Z5", 0.9]]);
+
+  const isGetal = (v) => typeof v === "number" && Number.isFinite(v);
+  const MAX_HARTSLAG = 255;       // meer past niet in het veld van een horloge; hoger is een kapot bestand
+  const isHartslag = (v) => Number.isInteger(v) && v > 0 && v <= MAX_HARTSLAG;
+  const som = (lijst) => lijst.reduce((a, b) => a + b, 0);
+  const rond = (v, decimalen) => (isGetal(v) ? Number(v.toFixed(decimalen)) : null);
+  const gemiddelde = (lijst) => (lijst.length ? som(lijst) / lijst.length : null);
+  const somOfNull = (lijst) => (lijst.some(isGetal) ? som(lijst.filter(isGetal)) : null);
+
+  function sportVan(sessies) {
+    const sporten = [...new Set(sessies.map((s) => s.sport).filter((s) => isGetal(s) && s !== SPORT_OVERGANG))];
+    if (sporten.length > 1) return SPORT_MULTI;
+    return sporten.length ? sporten[0] : 0;
+  }
+
+  // Seconden per hartslagwaarde: { van: laagste slag, sec: [seconden per slag vanaf 'van'] }
+  function hartslagVerdeling(punten) {
+    const perSlag = new Map();
+    punten.forEach((punt, i) => {
+      if (!isHartslag(punt.hartslag)) return;
+      const volgende = punten[i + 1];
+      const duur = volgende ? Math.min(MAX_GAT_SEC, Math.max(0, volgende.t - punt.t)) : 1;
+      perSlag.set(punt.hartslag, (perSlag.get(punt.hartslag) || 0) + duur);
+    });
+    if (!perSlag.size) return null;
+    const van = Math.min(...perSlag.keys());
+    const tot = Math.max(...perSlag.keys());
+    return { van, sec: Array.from({ length: tot - van + 1 }, (_, i) => perSlag.get(van + i) || 0) };
+  }
+
+  function hartslagUit(verdeling) {
+    if (!verdeling) return { gem: null, max: null };
+    const totaal = som(verdeling.sec);
+    const gewogen = som(verdeling.sec.map((sec, i) => sec * (verdeling.van + i)));
+    return { gem: totaal ? Math.round(gewogen / totaal) : null, max: verdeling.van + verdeling.sec.length - 1 };
+  }
+
+  // Dunt de meetpunten uit tot hooguit MAX_REEKS gemiddelden op gelijke tijdstappen.
+  function grafiekReeks(punten) {
+    if (punten.length < 2) return null;
+    const t0 = punten[0].t;
+    const duur = punten[punten.length - 1].t - t0;
+    if (duur <= 0) return null;
+    const aantal = Math.min(MAX_REEKS, punten.length);
+    const stapSec = duur / aantal;
+    const bakken = Array.from({ length: aantal }, () => ({ hs: [], v: [], h: [] }));
+    for (const punt of punten) {
+      const bak = bakken[Math.min(aantal - 1, Math.floor((punt.t - t0) / stapSec))];
+      if (isHartslag(punt.hartslag)) bak.hs.push(punt.hartslag);
+      if (isGetal(punt.snelheidMs)) bak.v.push(punt.snelheidMs);
+      if (isGetal(punt.hoogteM)) bak.h.push(punt.hoogteM);
+    }
+    return {
+      stapSec: rond(stapSec, 2),
+      hs: bakken.map((b) => rond(gemiddelde(b.hs), 0)),
+      v: bakken.map((b) => rond(gemiddelde(b.v), 2)),
+      h: bakken.map((b) => rond(gemiddelde(b.h), 1))
+    };
+  }
+
+  /** Maakt van de uitvoer van FitLezer.leesFit een activiteit voor in het logboek. */
+  function maakActiviteit(fit) {
+    const punten = fit.punten.filter((p) => isGetal(p.t));
+    const sessies = fit.sessies;
+    const verdeling = hartslagVerdeling(punten);
+    const gemeten = hartslagUit(verdeling);
+    const een = sessies.length === 1 ? sessies[0] : null;
+    const duurSec = somOfNull(sessies.map((s) => s.duurSec));
+    const afstandM = somOfNull(sessies.map((s) => s.afstandM));
+    const ronden = fit.ronden.filter((r) => isGetal(r.duurSec) && r.duurSec > 0).slice(0, MAX_RONDEN)
+      .map((r) => ({ duurSec: rond(r.duurSec, 0), afstandM: rond(r.afstandM, 0), gemHartslag: r.gemHartslag }));
+    return {
+      versie: 1,
+      start: sessies[0].start !== null ? sessies[0].start : (punten.length ? punten[0].t : null),
+      sport: sportVan(sessies),
+      duurSec: rond(duurSec, 0),
+      afstandM: rond(afstandM, 0),
+      gemHartslag: een && isGetal(een.gemHartslag) ? een.gemHartslag : gemeten.gem,
+      maxHartslag: een && isGetal(een.maxHartslag) ? een.maxHartslag : gemeten.max,
+      gemSnelheidMs: isGetal(duurSec) && duurSec > 0 && isGetal(afstandM) ? rond(afstandM / duurSec, 3) : null,
+      stijgingM: somOfNull(sessies.map((s) => s.stijgingM)),
+      hsVerdeling: verdeling,
+      reeks: grafiekReeks(punten),
+      ronden
+    };
+  }
+
+  /** Controleert de ingevulde maximale hartslag. Geeft het getal of null. */
+  function geldigeMaxHs(v) {
+    const tekst = String(v === null || v === undefined ? "" : v).trim();
+    if (!/^\d{2,3}$/.test(tekst)) return null;
+    const n = Number(tekst);
+    return n >= MIN_MAX_HS && n <= MAX_MAX_HS ? n : null;
+  }
+
+  /** Tijd per zone. Alles onder Z1 staat apart in `onderSec`; boven de maximale hartslag telt als Z5. */
+  function zoneTijden(verdeling, maxHs) {
+    const grenzen = ZONES.map(([, deel]) => Math.round(maxHs * deel));
+    const zones = ZONES.map(([naam], i) => ({ naam, vanBpm: grenzen[i], totBpm: i < ZONES.length - 1 ? grenzen[i + 1] - 1 : maxHs, sec: 0 }));
+    let onderSec = 0;
+    verdeling.sec.forEach((sec, i) => {
+      const bpm = verdeling.van + i;
+      let index = -1;
+      for (let z = 0; z < grenzen.length; z++) if (bpm >= grenzen[z]) index = z;
+      if (index < 0) onderSec += sec; else zones[index].sec += sec;
+    });
+    return { zones, onderSec, totaalSec: onderSec + som(zones.map((z) => z.sec)) };
+  }
+
+  /* ---------- tekst ---------- */
+  const tweeCijfers = (n) => String(n).padStart(2, "0");
+  function duurTekst(sec) {
+    if (!isGetal(sec)) return "–";
+    const s = Math.round(sec);
+    const uren = Math.floor(s / 3600), minuten = Math.floor((s % 3600) / 60);
+    return uren ? uren + ":" + tweeCijfers(minuten) + ":" + tweeCijfers(s % 60) : minuten + ":" + tweeCijfers(s % 60);
+  }
+  const komma = (v, decimalen) => v.toFixed(decimalen).replace(".", ",");
+  function afstandTekst(m) {
+    if (!isGetal(m)) return "–";
+    return m < 1000 ? Math.round(m) + " m" : komma(m / 1000, 2) + " km";
+  }
+  const gebruiktTempo = (sport) => TEMPO_SPORTEN.includes(sport);
+  /** Tempo (min/km) voor lopen en wandelen, anders snelheid (km/u). */
+  function snelheidTekst(ms, sport) {
+    if (!isGetal(ms) || ms <= 0) return "–";
+    if (!gebruiktTempo(sport)) return komma(ms * 3.6, 1) + " km/u";
+    return duurTekst(1000 / ms) + " /km";
+  }
+  const sportNaam = (sport) => SPORT_NAMEN[sport] || "Activiteit";
+  function datumTekst(unixSec) {
+    if (!isGetal(unixSec)) return "";
+    const d = new Date(unixSec * 1000);
+    return tweeCijfers(d.getDate()) + "-" + tweeCijfers(d.getMonth() + 1) + "-" + d.getFullYear() + " " + tweeCijfers(d.getHours()) + ":" + tweeCijfers(d.getMinutes());
+  }
+
+  const api = Object.freeze({
+    MAX_REEKS, MIN_MAX_HS, MAX_MAX_HS, MIN_TEMPO_MS,
+    maakActiviteit, geldigeMaxHs, zoneTijden, duurTekst, afstandTekst, snelheidTekst, gebruiktTempo, sportNaam, datumTekst
+  });
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.Analyse = api;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+"use strict";
+/*
+ * Grafiek: tekent grafieken als SVG, zonder bibliotheek. Elke grafiek heeft één
+ * meetwaarde en één as. Aanraken of eroverheen bewegen toont de waarde op dat
+ * moment. Tekst gebruikt de tekstkleuren; alleen de lijn of balk heeft kleur.
+ */
+(function (root) {
+  const NS = "http://www.w3.org/2000/svg";
+  const B = 320;                 // tekenbreedte (schaalt mee met het scherm)
+  const H_LIJN = 118, H_TREND = 112;
+  const BOVEN = 10, ONDER = 20;  // ruimte boven de lijn en voor de tijd-as
+  const MAX_STAAF = 28;
+  const UITSCHIETER_DEEL = 0.02;
+  const RING = 124, RING_STRAAL = 50;
+  let volgnummer = 0;            // voor unieke namen van kleurverlopen binnen de pagina
+
+  function svg(tag, attrs, ...kids) {
+    const n = document.createElementNS(NS, tag);
+    for (const [k, v] of Object.entries(attrs || {})) if (v !== null && v !== undefined) n.setAttribute(k, v);
+    n.append(...kids.filter(Boolean));
+    return n;
+  }
+  function html(tag, attrs, ...kids) {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (v === null || v === undefined) continue;
+      if (k === "text") n.textContent = v; else n.setAttribute(k, v);
+    }
+    n.append(...kids.filter(Boolean));
+    return n;
+  }
+  const isGetal = (v) => typeof v === "number" && Number.isFinite(v);
+  const tekstNode = (x, y, tekst, anker) => svg("text", { x, y, "text-anchor": anker || "start", class: "gtekst" }, document.createTextNode(tekst));
+
+  /**
+   * Lijngrafiek over de tijd.
+   * opties: { titel, waarden[], stapSec, tekst(v), tijdTekst(sec), samenvatting, isOmgekeerd, isBegrensd }
+   */
+  function lijn(opties) {
+    const { waarden, stapSec } = opties;
+    const geldig = waarden.filter(isGetal);
+    if (geldig.length < 2) return null;
+    // Bij tempo drukt één stilstand de hele lijn plat: schaal dan op de middelste 96% en knip de uitschieters af.
+    const gesorteerd = [...geldig].sort((a, b) => a - b);
+    const rand = opties.isBegrensd ? Math.floor(gesorteerd.length * UITSCHIETER_DEEL) : 0;
+    const laag = gesorteerd[rand], hoog = gesorteerd[gesorteerd.length - 1 - rand];
+    const bereik = hoog - laag || 1;
+    const yBoven = BOVEN, yOnder = H_LIJN - ONDER;
+    const x = (i) => (waarden.length === 1 ? 0 : (i / (waarden.length - 1)) * B);
+    const y = (v) => {
+      const deel = Math.max(0, Math.min(1, (v - laag) / bereik));
+      return opties.isOmgekeerd ? yBoven + deel * (yOnder - yBoven) : yOnder - deel * (yOnder - yBoven);
+    };
+    // Lijn, en per aaneengesloten stuk een vlak eronder (bij een gat in de meting loopt het vlak niet door).
+    let pad = "", vlak = "", isLos = true, laatsteX = 0;
+    const sluit = () => { if (!isLos) vlak += "L" + laatsteX.toFixed(1) + " " + yOnder + "Z"; };
+    waarden.forEach((v, i) => {
+      if (!isGetal(v)) { sluit(); isLos = true; return; }
+      const punt = x(i).toFixed(1) + " " + y(v).toFixed(1);
+      pad += (isLos ? "M" : "L") + punt;
+      vlak += isLos ? "M" + x(i).toFixed(1) + " " + yOnder + "L" + punt : "L" + punt;
+      isLos = false; laatsteX = x(i);
+    });
+    sluit();
+    const verloop = "gv" + (++volgnummer);
+
+    const uitlees = html("span", { class: "guit", text: opties.samenvatting });
+    const kruis = svg("line", { class: "gkruis", y1: yBoven - 4, y2: yOnder, visibility: "hidden" });
+    const stip = svg("circle", { class: "gstip", r: 4, visibility: "hidden" });
+    const bovenste = opties.isOmgekeerd ? laag : hoog, onderste = opties.isOmgekeerd ? hoog : laag;
+    const duur = stapSec * waarden.length;
+    const tekening = svg("svg", { viewBox: "0 0 " + B + " " + H_LIJN, role: "img", "aria-label": opties.titel + ": " + opties.samenvatting },
+      svg("line", { class: "graster", x1: 0, x2: B, y1: yBoven, y2: yBoven }),
+      svg("line", { class: "graster", x1: 0, x2: B, y1: (yBoven + yOnder) / 2, y2: (yBoven + yOnder) / 2 }),
+      svg("line", { class: "gas", x1: 0, x2: B, y1: yOnder, y2: yOnder }),
+      svg("defs", null, svg("linearGradient", { id: verloop, x1: 0, y1: 0, x2: 0, y2: 1 }, svg("stop", { class: "gstop1", offset: 0 }), svg("stop", { class: "gstop2", offset: 1 }))),
+      svg("path", { class: "gvul", d: vlak, fill: "url(#" + verloop + ")" }),
+      svg("path", { class: "glijn", d: pad }),
+      tekstNode(2, yBoven - 2, opties.tekst(bovenste)),
+      tekstNode(2, yOnder - 4, opties.tekst(onderste)),
+      tekstNode(0, H_LIJN - 5, opties.tijdTekst(0)),
+      tekstNode(B / 2, H_LIJN - 5, opties.tijdTekst(duur / 2), "middle"),
+      tekstNode(B, H_LIJN - 5, opties.tijdTekst(duur), "end"),
+      kruis, stip);
+
+    function toon(ev) {
+      const vak = tekening.getBoundingClientRect();
+      const start = Math.max(0, Math.min(waarden.length - 1, Math.round(((ev.clientX - vak.left) / vak.width) * (waarden.length - 1))));
+      let i = start;
+      for (let afstand = 0; afstand < waarden.length && !isGetal(waarden[i]); afstand++) {
+        i = isGetal(waarden[start - afstand]) ? start - afstand : (isGetal(waarden[start + afstand]) ? start + afstand : i);
+      }
+      if (!isGetal(waarden[i])) return;
+      kruis.setAttribute("x1", x(i)); kruis.setAttribute("x2", x(i)); kruis.setAttribute("visibility", "visible");
+      stip.setAttribute("cx", x(i)); stip.setAttribute("cy", y(waarden[i])); stip.setAttribute("visibility", "visible");
+      uitlees.textContent = opties.tijdTekst(i * stapSec) + " · " + opties.tekst(waarden[i]);
+      uitlees.classList.add("actief");
+    }
+    function verberg() {
+      kruis.setAttribute("visibility", "hidden"); stip.setAttribute("visibility", "hidden");
+      uitlees.textContent = opties.samenvatting; uitlees.classList.remove("actief");
+    }
+    tekening.addEventListener("pointerdown", toon);
+    tekening.addEventListener("pointermove", toon);
+    // Met de muis verdwijnt de waarde bij weggaan; op een aanraakscherm blijft hij staan na het optillen.
+    tekening.addEventListener("pointerleave", (ev) => { if (ev.pointerType === "mouse") verberg(); });
+    return html("div", { class: "grafiek" }, html("div", { class: "gkop" }, html("b", { text: opties.titel }), uitlees), tekening);
+  }
+
+  /** Liggende balken: tijd per hartslagzone. `resultaat` komt uit Analyse.zoneTijden. */
+  function zones(resultaat, duurTekst) {
+    const totaal = resultaat.totaalSec || 1;
+    const langste = Math.max(1, ...resultaat.zones.map((z) => z.sec));
+    const rijen = [...resultaat.zones].reverse().map((z, i) => {
+      const nr = resultaat.zones.length - i;
+      const vulling = html("i", { class: "z" + nr, style: "width:" + ((z.sec / langste) * 100).toFixed(1) + "%" });
+      return html("div", { class: "zrij" },
+        html("span", { class: "znaam" }, html("b", { text: z.naam }), document.createTextNode(" " + z.vanBpm + "–" + z.totBpm)),
+        html("span", { class: "zbalk" }, vulling),
+        html("span", { class: "zwaarde", text: duurTekst(z.sec) + " · " + Math.round((z.sec / totaal) * 100) + "%" }));
+    });
+    const onder = resultaat.onderSec > 0 ? html("p", { class: "note", text: "Onder Z1: " + duurTekst(resultaat.onderSec) }) : null;
+    return html("div", { class: "zones", role: "table", "aria-label": "Tijd per hartslagzone" }, ...rijen, onder);
+  }
+
+  /** Staafgrafiek: belasting per week. Tikken op een week roept opKies(wk) aan. */
+  function trend(weken, huidigeWk, opKies) {
+    const hoogste = Math.max(1, ...weken.map((w) => w.belasting));
+    const kolom = B / weken.length;
+    const breedte = Math.min(MAX_STAAF, kolom - 6);
+    const yBoven = 18, yOnder = H_TREND - ONDER;
+    const delen = [svg("line", { class: "gas", x1: 0, x2: B, y1: yOnder, y2: yOnder })];
+    weken.forEach((w, i) => {
+      const midden = kolom * i + kolom / 2;
+      const hoogte = (w.belasting / hoogste) * (yOnder - yBoven);
+      const isHuidig = w.wk === huidigeWk;
+      if (hoogte > 0) {
+        const r = Math.min(4, hoogte, breedte / 2), links = midden - breedte / 2, top = yOnder - hoogte;
+        delen.push(svg("path", { class: "gstaaf" + (isHuidig ? " huidig" : ""),
+          d: `M${links} ${yOnder}V${top + r}Q${links} ${top} ${links + r} ${top}H${links + breedte - r}Q${links + breedte} ${top} ${links + breedte} ${top + r}V${yOnder}Z` }));
+      }
+      if (isHuidig || weken.length <= 8) delen.push(tekstNode(midden, yOnder - hoogte - 4, String(w.belasting), "middle"));
+      const label = tekstNode(midden, H_TREND - 5, w.wk, "middle");
+      if (isHuidig) label.setAttribute("class", "gtekst sterk");
+      const vlak = svg("rect", { class: "gvlak", x: kolom * i, y: 0, width: kolom, height: H_TREND, role: "button", tabindex: "0", "aria-label": "Week " + w.wk + ": belasting " + w.belasting + ", " + w.minuten + " minuten" });
+      vlak.addEventListener("click", () => opKies(w.wk));
+      vlak.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") opKies(w.wk); });
+      delen.push(label, vlak);
+    });
+    return html("div", { class: "grafiek" }, svg("svg", { viewBox: "0 0 " + B + " " + H_TREND, role: "group", "aria-label": "Belasting per week" }, ...delen));
+  }
+
+  /** Ring: welk deel (0..1) is gedaan. De tekst erin zet de app er zelf overheen. */
+  function ring(deel, omschrijving) {
+    const omtrek = 2 * Math.PI * RING_STRAAL, midden = RING / 2;
+    const stuk = Math.max(0, Math.min(1, deel)) * omtrek;
+    const cirkel = (klasse, extra) => svg("circle", { class: klasse, cx: midden, cy: midden, r: RING_STRAAL, ...extra });
+    return svg("svg", { viewBox: "0 0 " + RING + " " + RING, role: "img", "aria-label": omschrijving },
+      cirkel("ringbaan"),
+      stuk > 0 ? cirkel("ringboog", { "stroke-dasharray": stuk.toFixed(1) + " " + omtrek.toFixed(1), transform: "rotate(-90 " + midden + " " + midden + ")" }) : null);
+  }
+
+  root.Grafiek = Object.freeze({ lijn, zones, trend, ring });
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+"use strict";
+/*
+ * Brievenbus: de marinier versleutelt zijn log met de publieke sleutel van de
+ * groep; alleen Beheer, met de privésleutel, kan het openen. Groepsgenoten
+ * kunnen elkaars logbestand dus niet lezen.
+ * ECDH P-256 (eenmalige sleutel per bestand) -> HKDF-SHA256 -> AES-GCM-256.
+ * De privésleutel staat alleen versleuteld op schijf, onder het
+ * instructeurswachtwoord (PBKDF2 600.000 rondes, zoals de MPT-bestanden).
+ */
+(function (root) {
+  const FORMAAT_LOG_UIT = "mpt-log-uit";
+  const FORMAAT_SLEUTEL = "mpt-brievenbus-sleutel";
+  const ITER = 600000;
+  const CURVE = { name: "ECDH", namedCurve: "P-256" };
+  const PUBLIEK_BYTES = 65;       // ongecomprimeerd P-256-punt
+  const MIN_WACHTWOORD = 10;
+  const CODE_PATROON = /^[A-Z0-9]{1,10}$/;
+  const HKDF_INFO = "mpt-log-uit v1";
+  const enc = new TextEncoder();
+  const dec = new TextDecoder();
+
+  const MELDINGEN = Object.freeze({
+    GEEN_LOG: "Dit is geen logbestand van COMBATREADY.",
+    GEEN_SLEUTEL: "Dit is geen sleutelbestand van een brievenbus.",
+    ITER: "Dit bestand heeft afwijkende beveiligingsinstellingen en wordt geweigerd.",
+    WACHTWOORD: "Wachtwoord klopt niet, of het sleutelbestand is beschadigd.",
+    KORT: "Het wachtwoord moet minimaal " + MIN_WACHTWOORD + " tekens hebben.",
+    ANDERE_BUS: "Dit logbestand is niet voor deze brievenbus gemaakt, of het is beschadigd.",
+    PUBLIEK: "De brievenbus-sleutel is ongeldig."
+  });
+  class BusFout extends Error {
+    constructor(code) { super(MELDINGEN[code] || code); this.name = "BusFout"; this.code = code; }
+  }
+
+  const b64 = (u8) => { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
+  const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  const isTekst = (v) => typeof v === "string" && v.length > 0;
+  const willekeurig = (n) => crypto.getRandomValues(new Uint8Array(n));
+  const aadLog = (w) => enc.encode([w.formaat, w.versie, w.code, w.gemaakt, w.eph].join("|"));
+  const aadSleutel = (w) => enc.encode([w.formaat, w.versie, w.iter, w.code, w.gemaakt, w.publiek].join("|"));
+
+  async function importeerPubliek(publiekB64) {
+    try {
+      const ruw = unb64(publiekB64);
+      if (ruw.length !== PUBLIEK_BYTES) throw new Error("lengte");
+      return await crypto.subtle.importKey("raw", ruw, CURVE, false, []);
+    } catch (_) { throw new BusFout("PUBLIEK"); }
+  }
+  async function gedeeldeSleutel(prive, publiek, ephRuw) {
+    const bits = await crypto.subtle.deriveBits({ name: "ECDH", public: publiek }, prive, 256);
+    const basis = await crypto.subtle.importKey("raw", bits, "HKDF", false, ["deriveKey"]);
+    return crypto.subtle.deriveKey({ name: "HKDF", hash: "SHA-256", salt: ephRuw, info: enc.encode(HKDF_INFO) }, basis, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+  }
+  async function wachtwoordSleutel(pw, salt) {
+    const basis = await crypto.subtle.importKey("raw", enc.encode(pw), "PBKDF2", false, ["deriveKey"]);
+    return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: ITER, hash: "SHA-256" }, basis, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+  }
+
+  /** Beheer: maakt een nieuwe brievenbus. Geeft het sleutelbestand (privésleutel versleuteld onder het wachtwoord). */
+  async function maakBrievenbus(code, wachtwoord, gemaakt) {
+    if (!isTekst(wachtwoord) || wachtwoord.length < MIN_WACHTWOORD) throw new BusFout("KORT");
+    const paar = await crypto.subtle.generateKey(CURVE, true, ["deriveBits"]);
+    const publiek = b64(new Uint8Array(await crypto.subtle.exportKey("raw", paar.publicKey)));
+    const prive = new Uint8Array(await crypto.subtle.exportKey("pkcs8", paar.privateKey));
+    const salt = willekeurig(16), iv = willekeurig(12);
+    const w = { formaat: FORMAAT_SLEUTEL, versie: 1, iter: ITER, code: String(code || ""), gemaakt: String(gemaakt || ""), publiek };
+    const data = await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: aadSleutel(w) }, await wachtwoordSleutel(wachtwoord, salt), prive);
+    prive.fill(0);
+    return { ...w, salt: b64(salt), iv: b64(iv), data: b64(new Uint8Array(data)) };
+  }
+
+  function controleerSleutelBestand(w) {
+    const isGoed = Boolean(w) && typeof w === "object" && w.formaat === FORMAAT_SLEUTEL && isTekst(w.publiek) && isTekst(w.salt) && isTekst(w.iv) && isTekst(w.data) && typeof w.code === "string" && CODE_PATROON.test(w.code);
+    if (!isGoed) throw new BusFout("GEEN_SLEUTEL");
+    if (w.iter !== ITER) throw new BusFout("ITER");
+    return w;
+  }
+
+  /** Beheer: opent de brievenbus met het instructeurswachtwoord. De privésleutel blijft alleen in geheugen. */
+  async function openBrievenbus(w, wachtwoord) {
+    controleerSleutelBestand(w);
+    try {
+      const pkcs8 = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(w.iv), additionalData: aadSleutel(w) }, await wachtwoordSleutel(wachtwoord, unb64(w.salt)), unb64(w.data));
+      const prive = await crypto.subtle.importKey("pkcs8", pkcs8, CURVE, false, ["deriveBits"]);
+      return { prive, publiek: w.publiek, code: w.code };
+    } catch (_) { throw new BusFout("WACHTWOORD"); }
+  }
+
+  /** Marinier: versleutelt de inhoud voor de brievenbus. Geeft het logbestand. */
+  async function versleutelVoorBus(inhoud, publiekB64, code, gemaakt) {
+    const publiek = await importeerPubliek(publiekB64);
+    const eenmalig = await crypto.subtle.generateKey(CURVE, true, ["deriveBits"]);
+    const ephRuw = new Uint8Array(await crypto.subtle.exportKey("raw", eenmalig.publicKey));
+    const iv = willekeurig(12);
+    const w = { formaat: FORMAAT_LOG_UIT, versie: 1, code: String(code || ""), gemaakt: String(gemaakt || ""), eph: b64(ephRuw) };
+    const sleutel = await gedeeldeSleutel(eenmalig.privateKey, publiek, ephRuw);
+    const data = await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: aadLog(w) }, sleutel, enc.encode(JSON.stringify(inhoud)));
+    return { ...w, iv: b64(iv), data: b64(new Uint8Array(data)) };
+  }
+
+  function controleerLogBestand(w) {
+    const isGoed = Boolean(w) && typeof w === "object" && w.formaat === FORMAAT_LOG_UIT && w.versie === 1 && isTekst(w.eph) && isTekst(w.iv) && isTekst(w.data) && typeof w.code === "string";
+    if (!isGoed) throw new BusFout("GEEN_LOG");
+    return w;
+  }
+
+  /** Beheer: opent een logbestand met de geopende brievenbus. */
+  async function openLogBestand(w, bus) {
+    controleerLogBestand(w);
+    try {
+      const ephRuw = unb64(w.eph);
+      const sleutel = await gedeeldeSleutel(bus.prive, await importeerPubliek(w.eph), ephRuw);
+      const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(w.iv), additionalData: aadLog(w) }, sleutel, unb64(w.data));
+      return JSON.parse(dec.decode(pt));
+    } catch (_) { throw new BusFout("ANDERE_BUS"); }
+  }
+
+  const api = Object.freeze({ BusFout, FORMAAT_LOG_UIT, FORMAAT_SLEUTEL, MIN_WACHTWOORD, maakBrievenbus, controleerSleutelBestand, openBrievenbus, versleutelVoorBus, controleerLogBestand, openLogBestand });
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.Brievenbus = api;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+"use strict";
+/*
+ * Overzicht: wat de marinier inlevert en wat Beheer daarvan laat zien.
+ * Het logbestand bevat per les alleen: gedaan/niet, zwaarte en duur.
+ * Niets uit het horloge. Functies wijzigen hun invoer niet.
+ */
+(function (root) {
+  const FORMAAT_INHOUD = "mpt-log-inhoud";
+  const STATUS_GEDAAN = "gedaan";
+  const STATUS_NIET = "niet";
+  const STATUS_OPEN = "open";      // alleen in Beheer: gepland in het rooster, niets gelogd
+  const MAX_REGELS = 5000;
+  const MAX_MINUTEN = 600;
+  const VNR_PATROON = /^\d{3,10}$/;
+  const MAX_VOORUIT_MS = 24 * 60 * 60 * 1000;   // speling voor een telefoonklok die voorloopt
+
+  class OverzichtFout extends Error {
+    constructor(melding) { super(melding); this.name = "OverzichtFout"; }
+  }
+  const tekst = (v, max) => String(v === undefined || v === null ? "" : v).slice(0, max);
+  const natuurlijk = (a, b) => a.localeCompare(b, "nl", { numeric: true });
+  const geldigVnr = (v) => { const s = tekst(v, 20).trim(); return VNR_PATROON.test(s) ? s : null; };
+
+  // Alleen deze velden gaan mee. `fit` (horloge) wordt hier bewust niet genoemd.
+  function regelVan(e) {
+    const isGedaan = e.status === STATUS_GEDAAN;
+    return { meso: tekst(e.meso, 60), wk: tekst(e.wk, 10), dag: e.dag, nr: tekst(e.nr, 10), d: tekst(e.d, 60), les: tekst(e.les, 120),
+      status: isGedaan ? STATUS_GEDAAN : STATUS_NIET, zwaarte: isGedaan ? e.zwaarte : null, minuten: isGedaan ? e.minuten : null };
+  }
+
+  /** Marinier: maakt de inhoud van het logbestand uit het logboek. */
+  function maakInhoud(log, code, vnr, gemaaktIso) {
+    return { formaat: FORMAAT_INHOUD, versie: 1, code: String(code || ""), vnr, gemaakt: gemaaktIso, regels: Object.values(log.items).map(regelVan) };
+  }
+
+  const isGeheel = (v, min, max) => Number.isInteger(v) && v >= min && v <= max;
+  function controleerRegel(r) {
+    const isBasis = r && typeof r === "object" && typeof r.meso === "string" && typeof r.wk === "string" && isGeheel(r.dag, 0, 6) && typeof r.nr === "string";
+    if (!isBasis) return null;
+    if (r.status === STATUS_NIET) return { ...regelVan(r), zwaarte: null, minuten: null };
+    if (r.status !== STATUS_GEDAAN || !isGeheel(r.zwaarte, 1, 10) || !isGeheel(r.minuten, 1, MAX_MINUTEN)) return null;
+    return regelVan(r);
+  }
+
+  /** Beheer: controleert een ontsleuteld logbestand. Vreemde invoer wordt geweigerd, niet gerepareerd. `nuMs` is de tijd van nu. */
+  function controleerInhoud(x, verwachteCode, nuMs) {
+    const isGoed = x && typeof x === "object" && x.formaat === FORMAAT_INHOUD && x.versie === 1 && Array.isArray(x.regels) && x.regels.length <= MAX_REGELS && typeof x.gemaakt === "string";
+    if (!isGoed) throw new OverzichtFout("Dit logbestand heeft een onbekende opbouw.");
+    if (String(x.code || "") !== String(verwachteCode || "")) throw new OverzichtFout("Dit logbestand is van een andere groep.");
+    const vnr = geldigVnr(x.vnr);
+    if (!vnr || Number.isNaN(Date.parse(x.gemaakt))) throw new OverzichtFout("Dit logbestand heeft een ongeldig V-nummer of een ongeldige datum.");
+    if (typeof nuMs === "number" && Date.parse(x.gemaakt) > nuMs + MAX_VOORUIT_MS) throw new OverzichtFout("Dit logbestand heeft een datum in de toekomst. Zet de klok van de telefoon goed en lever opnieuw in.");
+    const regels = x.regels.map(controleerRegel);
+    if (regels.includes(null)) throw new OverzichtFout("Dit logbestand bevat ongeldige regels.");
+    const lessen = new Set(regels.map((r) => JSON.stringify([r.meso, r.wk, r.dag, r.nr])));
+    if (lessen.size !== regels.length) throw new OverzichtFout("Dit logbestand bevat dezelfde les meer dan één keer.");
+    return { code: String(x.code || ""), vnr, gemaakt: x.gemaakt, regels };
+  }
+
+  /** Per V-nummer telt alleen het nieuwste bestand. */
+  function nieuwstePerPersoon(inhouden) {
+    const perVnr = new Map();
+    for (const inhoud of inhouden) {
+      const huidig = perVnr.get(inhoud.vnr);
+      if (!huidig || Date.parse(inhoud.gemaakt) > Date.parse(huidig.gemaakt)) perVnr.set(inhoud.vnr, inhoud);
+    }
+    return [...perVnr.values()].sort((a, b) => natuurlijk(a.vnr, b.vnr));
+  }
+
+  /** Beheer: controleert het bewaarde plan (zie Logboek.planVan). Geeft een schone kopie of gooit OverzichtFout. */
+  function controleerPlan(x) {
+    const isObject = (v) => Boolean(v) && typeof v === "object";
+    const isLes = (l) => isObject(l) && isGeheel(l.dag, 0, 6) && typeof l.nr === "string";
+    const isWeek = (w) => isObject(w) && typeof w.wk === "string" && Array.isArray(w.lessen) && w.lessen.every(isLes);
+    const isMeso = (m) => isObject(m) && typeof m.naam === "string" && Array.isArray(m.weken) && m.weken.every(isWeek);
+    if (!isObject(x) || !Array.isArray(x.mesos) || !x.mesos.every(isMeso)) throw new OverzichtFout("Dit rooster heeft een onbekende opbouw.");
+    return { gemaakt: tekst(x.gemaakt, 40), mesos: x.mesos.map((m) => ({ naam: tekst(m.naam, 60),
+      weken: m.weken.map((w) => ({ wk: tekst(w.wk, 10), lessen: w.lessen.map((l) => ({ dag: l.dag, nr: tekst(l.nr, 10), d: tekst(l.d, 60), les: tekst(l.les, 120) })) })) })) };
+  }
+  /** De geplande lessen van een week volgens het plan, of null als het plan die week niet kent. */
+  function geplandeLessen(plan, meso, wk) {
+    const m = plan ? plan.mesos.find((x) => x.naam === meso) : null;
+    const w = m ? m.weken.find((x) => x.wk === wk) : null;
+    return w ? w.lessen : null;
+  }
+
+  /** Welke meso's en weken komen in de logs voor, aangevuld met die uit het plan (als dat er is). */
+  function mesoWeken(inhouden, plan) {
+    const mesos = new Map();
+    for (const inhoud of inhouden) for (const r of inhoud.regels) mesos.set(r.meso, (mesos.get(r.meso) || new Set()).add(r.wk));
+    for (const m of plan ? plan.mesos : []) for (const w of m.weken) mesos.set(m.naam, (mesos.get(m.naam) || new Set()).add(w.wk));
+    return [...mesos.entries()].sort((a, b) => natuurlijk(a[0], b[0])).map(([meso, weken]) => ({ meso, weken: [...weken].sort(natuurlijk) }));
+  }
+
+  function totaalVan(regels) {
+    const gedaan = regels.filter((r) => r.status === STATUS_GEDAAN);
+    return { gedaan: gedaan.length, niet: regels.length - gedaan.length, minuten: gedaan.reduce((s, r) => s + r.minuten, 0), belasting: gedaan.reduce((s, r) => s + r.zwaarte * r.minuten, 0) };
+  }
+  const regelsVan = (inhoud, meso, wk) => inhoud.regels.filter((r) => r.meso === meso && r.wk === wk).sort((a, b) => a.dag - b.dag || natuurlijk(a.nr, b.nr));
+
+  const isZelfdeLes = (a, b) => a.dag === b.dag && a.nr === b.nr;
+  /**
+   * De week van één persoon. Met plan: ook de lessen die nog open staan, en
+   * gelogde lessen die niet (meer) in het rooster staan krijgen isVervallen.
+   */
+  function weekRegels(inhoud, meso, wk, plan) {
+    const regels = regelsVan(inhoud, meso, wk), gepland = geplandeLessen(plan, meso, wk);
+    if (!gepland) return regels.map((r) => ({ ...r, isVervallen: false }));
+    const gelogd = regels.map((r) => ({ ...r, isVervallen: !gepland.some((l) => isZelfdeLes(r, l)) }));
+    const open = gepland.filter((l) => !regels.some((r) => isZelfdeLes(r, l)))
+      .map((l) => ({ meso, wk, dag: l.dag, nr: l.nr, d: l.d, les: l.les, status: STATUS_OPEN, zwaarte: null, minuten: null, isVervallen: false }));
+    return [...gelogd, ...open].sort((a, b) => a.dag - b.dag || natuurlijk(a.nr, b.nr));
+  }
+  /** Eén regel per persoon voor de gekozen week. `open` is het aantal geplande lessen zonder log, of null zonder plan. */
+  function weekOverzicht(inhouden, meso, wk, plan) {
+    const heeftPlan = geplandeLessen(plan, meso, wk) !== null;
+    return inhouden.map((inhoud) => {
+      const regels = weekRegels(inhoud, meso, wk, plan);
+      return { vnr: inhoud.vnr, gemaakt: inhoud.gemaakt, ...totaalVan(regels.filter((r) => r.status !== STATUS_OPEN)),
+        open: heeftPlan ? regels.filter((r) => r.status === STATUS_OPEN).length : null };
+    });
+  }
+  /** Belasting per week van één persoon binnen een meso. */
+  function persoonTrend(inhoud, meso, weken) {
+    return weken.map((wk) => ({ wk, ...totaalVan(regelsVan(inhoud, meso, wk)) }));
+  }
+
+  const api = Object.freeze({ OverzichtFout, FORMAAT_INHOUD, geldigVnr, maakInhoud, controleerInhoud, nieuwstePerPersoon, mesoWeken, weekOverzicht, weekRegels, controleerPlan, geplandeLessen, STATUS_OPEN, regelsVan, persoonTrend, totaalVan });
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.Overzicht = api;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+"use strict";
+/*
+ * Uitslagen: MPT-uitslagen per persoon (AMF, FPM, kracht, loop, speedmars, eerdere tests).
+ * Overgenomen uit de live apps "MPT Persoon" en "MPT Instructie" (daar regel voor regel gelijk).
+ * De rekenregels volgen het Excel-blad; ze zijn bewust NIET herschreven, alleen ingepakt:
+ * de oude app hield data/index/hist in losse variabelen, hier zitten ze in één weergave per bestand.
+ */
+(function (root) {
+  class UitslagFout extends Error {
+    constructor() { super("Dit uitslagenbestand heeft een onbekende opbouw. Vraag een nieuw bestand."); this.name = "UitslagFout"; }
+  }
+  /** Minimale controle vóór bewaren: een object met een lijst personen. De weergave vangt ontbrekende velden zelf op. */
+  function controleer(data) {
+    if (!data || typeof data !== "object" || !Array.isArray(data.personen)) throw new UitslagFout();
+    return data;
+  }
+
+  /* ---------- hulpjes (ongewijzigd uit de oude app) ---------- */
+  const isNul = x => x === undefined || x === null || String(x).trim() === "" || /^[0.,\s]+$/.test(String(x).trim());
+  function serieDatum(n) {
+    const d = new Date(Date.UTC(1899, 11, 30) + Math.floor(n) * 86400000), pad = v => String(v).padStart(2, "0");
+    return pad(d.getUTCDate()) + "-" + pad(d.getUTCMonth() + 1) + "-" + d.getUTCFullYear();
+  }
+  function ratioVan(txt) {
+    const t = String(txt || "").trim(); let r = parseFloat(t.replace(",", "."));
+    if (/%$/.test(t)) r = r / 100;
+    return r;
+  }
+  function xround(x, d) {
+    if (typeof x !== "number" || !isFinite(x)) return x;
+    const m = Math.pow(10, d), v = Number((Math.abs(x) * m).toPrecision(15));
+    return Math.sign(x) * Math.round(v) / m;
+  }
+  const xmod = (a, b) => a - b * Math.floor(a / b);
+  const mmss = s => Math.floor(s / 60) + ":" + String(xround(xmod(s, 60), 0)).padStart(2, "0");
+  function nl(x, dec, fixed) {
+    if (typeof x !== "number" || !isFinite(x)) return "–";
+    return x.toLocaleString("nl-NL", { minimumFractionDigits: fixed ? dec : 0, maximumFractionDigits: dec });
+  }
+  const num = v => (typeof v === "number" && isFinite(v)) ? v : null;
+  const clean = s => String(s || "").replace(/:\s*$/, "").trim();
+
+  /** Index op V-nummer en de eerdere tests per V-nummer. */
+  function bouwIndex(data) {
+    const index = new Map((Array.isArray(data.personen) ? data.personen : []).filter(p => p && p.v != null).map(p => [String(p.v).trim(), p]));
+    const hist = new Map();
+    const H = data.historie;
+    if (!H || !Array.isArray(H.rijen)) return { index, hist };
+    const kol = (H.kol || []).map(k => String(k).trim());
+    for (const r of H.rijen) {
+      if (!r) continue;
+      const v = String(r.v).trim(); if (!v) continue;
+      const row = { kol, t: {}, n: {}, lijst: [] };
+      kol.forEach((k, i) => {
+        let tx = r.t && r.t[i] != null ? String(r.t[i]) : "";
+        if (/datum/i.test(k) && /^\d{5}([.,]\d+)?$/.test(tx.trim())) tx = serieDatum(parseFloat(tx.replace(",", ".")));
+        row.t[k.toLowerCase()] = tx; row.n[k.toLowerCase()] = r.n ? r.n[i] : null;
+        if (tx && i > 0) row.lijst.push([k, tx]);
+      });
+      if (!hist.has(v)) hist.set(v, []);
+      hist.get(v).push(row);
+      if (!index.has(v)) index.set(v, { v, t: {}, n: {}, alleenHistorie: true });
+    }
+    return { index, hist };
+  }
+
+  /* ---------- historie: terugval en aanvullen (ongewijzigd) ---------- */
+  const NIEUW_CELLEN = ["B8", "B9", "B10", "B11", "B13", "D8", "D9", "D10", "D11", "D16", "D17", "D18", "D19", "D20", "D21", "D22", "D23"];
+  const heeftNieuw = p => NIEUW_CELLEN.some(a => !isNul(p.t && p.t[a]));
+  const testDatum = row => row.t["testdatum amf"] || row.t["testdatum fpm"] || row.t["archief datum"] || "onbekende datum";
+  function uitHistorie(data, p, row) {
+    const g = k => row.t[k.toLowerCase()] || "";
+    const gn = k => num(row.n[k.toLowerCase()]);
+    const L = a => (data.labels && data.labels[a]) || "";
+    const t = { B4: (p.t && p.t.B4) || "", E3: g("Leeftijd"), E4: g("Gewicht (kg)"),
+      B8: g("Bench 1RM"), C8: g("Bench rel"), D8: g("Bench score"), B9: g("DL 1RM"), C9: g("DL rel"), D9: g("DL score"),
+      B10: g("Pull-up reps"), D10: g("PU score"), B11: g("1000m-eq"), D12: g("AMF Totaal"), B13: g("5km sec"), D13: g("5km score"),
+      B16: g("Zwem (m)"), B17: g("FPM Pull-up"), B18: g("Sit-up"), B19: g("Push-up"), B20: g("Speedmars km"), B21: g("Combat sec"), D23: g("FPM EIND"),
+      B50: g("1000m-eq"), B91: g("Speedmars km"), E91: g("Rang"), H91: g("Niveau FPM") };
+    const n = {};
+    let lengte = parseFloat(String(t.B4).replace(",", ".")); const gewicht = gn("Gewicht (kg)");
+    if (lengte > 3) lengte = lengte / 100;
+    if (isFinite(lengte) && lengte > 0 && gewicht !== null) t.G4 = nl(xround(gewicht / (lengte * lengte), 1), 1, true);
+    const bench = gn("Bench 1RM"), dl = gn("DL 1RM");
+    for (let r = 27; r <= 33; r++) {
+      const base = /bench/i.test(L("B" + r)) ? bench : dl;
+      const ratio = ratioVan(L("C" + r));
+      if (base === null || !isFinite(ratio)) continue;
+      const val = ratio === 1 ? base : xround(base * ratio, 1);
+      n["D" + r] = val; t["D" + r] = nl(xround(val, 1), 1);
+    }
+    const k1 = gn("1000m-eq"), k5 = gn("5km sec");
+    if (k1 !== null) n.B50 = k1;
+    if (k5 !== null && k5 > 0) n.B72 = k5 * Math.pow(1000 / 5000, 1.06);
+    return { v: p.v, t, n };
+  }
+  function mengPersoon(data, p, row) {
+    const h = uitHistorie(data, p, row);
+    const dAmf = row.t["testdatum amf"] || testDatum(row), dFpm = row.t["testdatum fpm"] || testDatum(row);
+    const has = (o, a) => !isNul(o && o[a]);
+    const q = { v: p.v, t: Object.assign({}, p.t), n: Object.assign({}, p.n), oud: {} }, namen = [];
+    const fpmC = ["B16", "B17", "B18", "B19", "B20", "B21", "D16", "D17", "D18", "D19", "D20", "D21", "D22", "D23"];
+    const G = [
+      ["Bench", has(p.t, "B8"), has(h.t, "B8"), ["B8", "C8", "D8", "D27", "D28", "D29"], ["D27", "D28", "D29"], dAmf],
+      ["Deadlift", has(p.t, "B9"), has(h.t, "B9"), ["B9", "C9", "D9", "D30", "D31", "D32", "D33"], ["D30", "D31", "D32", "D33"], dAmf],
+      ["Pull-ups", has(p.t, "B10") || has(p.t, "D10"), has(h.t, "B10"), ["B10", "D10"], [], dAmf],
+      ["1000 m", has(p.t, "B11"), has(h.t, "B11"), ["B11", "D11", "B50"], ["B50"], dAmf],
+      ["5 km", has(p.t, "B13") || num(p.n && p.n.B72) !== null, has(h.t, "B13"), ["B13", "D13"], ["B72"], dAmf],
+      ["FPM", fpmC.some(a => has(p.t, a)), fpmC.some(a => has(h.t, a)), ["B16", "B17", "B18", "B19", "B20", "B21", "C16", "C17", "C18", "C19", "C20", "C21", "D16", "D17", "D18", "D19", "D20", "D21", "D22", "D23", "B91", "E91", "H91", "B92", "E92", "B94", "B95", "B96"], [], dFpm],
+      ["", has(p.t, "E4"), has(h.t, "E4"), ["E4", "G4"], [], dAmf],
+      ["", has(p.t, "E3"), has(h.t, "E3"), ["E3"], [], dAmf]
+    ];
+    for (const [naam, nieuw, inHist, tc, nc, d] of G) {
+      if (nieuw || !inHist) continue;
+      tc.forEach(a => { if (h.t[a] !== undefined && h.t[a] !== "") { q.t[a] = h.t[a]; q.oud[a] = d; } else delete q.t[a]; });
+      nc.forEach(a => { if (h.n[a] !== undefined) { q.n[a] = h.n[a]; q.oud[a] = d; } else delete q.n[a]; });
+      if (naam) namen.push(naam + " (" + d + ")");
+    }
+    if (["B8", "B9", "B10", "B11"].some(a => isNul(p.t[a]))) delete q.t.D12;
+    return { q, namen };
+  }
+  /** Wat er van één persoon getoond wordt: nieuwste test, aangevuld uit of teruggevallen op de historie. Zonder scherm, dus te testen. */
+  function kiesWeergave(data, hist, p) {
+    const rows = (hist && hist.get(String(p.v).trim())) || [];
+    const terugval = !heeftNieuw(p) && rows.length > 0;
+    const meng = !terugval && rows.length > 0 ? mengPersoon(data, p, rows[rows.length - 1]) : null;
+    let toon = terugval ? uitHistorie(data, p, rows[rows.length - 1]) : (meng ? meng.q : p);
+    if (!terugval && ["B8", "B9", "B10", "B11"].some(a => isNul(toon.t && toon.t[a]))) { toon = Object.assign({}, toon, { t: Object.assign({}, toon.t) }); delete toon.t.D12; }
+    return { toon, rows, terugval, namen: meng ? meng.namen : [] };
+  }
+
+  /* ---------- weergave (ongewijzigd, met host als parameter) ---------- */
+  const SCORE = [
+    ["onvoldoende", "#FFCDD2", "#B71C1C"], ["niet getest", "#EEEEEE", "#616161"],
+    ["uitstekend", "#1B5E20", "#FFFFFF"], ["goed", "#388E3C", "#FFFFFF"], ["voldoende", "#C8E6C9", "#1B5E20"],
+    ["matig", "#FFE0B2", "#E65100"], ["slecht", "#B71C1C", "#FFFFFF"],
+    ["geslaagd", "#1B5E20", "#FFFFFF"], ["gezakt", "#B71C1C", "#FFFFFF"]
+  ];
+  function el(tag, attrs, ...kids) {
+    const e = document.createElement(tag);
+    if (attrs) for (const k in attrs) { if (k === "class") e.className = attrs[k]; else if (k === "text") e.textContent = attrs[k]; else e.setAttribute(k, attrs[k]); }
+    for (const k of kids) if (k != null) e.append(k);
+    return e;
+  }
+  function badge(text, big) {
+    const b = el("span", { class: "badge" + (big ? " big" : ""), text: text || "–" });
+    const low = String(text || "").toLowerCase();
+    for (const [k, bg, fg] of SCORE) if (low.includes(k)) { b.style.background = bg; b.style.color = fg; break; }
+    return b;
+  }
+  function card(title, ...kids) { return el("div", { class: "card" }, el("h2", { text: title }), ...kids); }
+
+  function renderPerson(data, host, p) {
+    const T = a => { const v = p.t && p.t[a]; return v === undefined || v === null || v === "" ? "" : String(v); };
+    const L = a => (data.labels && data.labels[a]) || "";
+    const V = a => T(a) || "–";
+    const N = a => num(p.n && p.n[a]);
+    const O = a => (p.oud && p.oud[a]) ? "test " + p.oud[a] : "";
+    host.textContent = "";
+
+    // Profiel
+    const kv = el("div", { class: "kv" });
+    [["A3", null, String(p.v)], ["D3", "E3"], ["F3", "G3"], ["A4", "B4"], ["D4", "E4"], ["F4", "G4"]].forEach(([l, a, fixed]) =>
+      kv.append(el("div", a && O(a) ? { class: "oudkv" } : null, el("span", { text: clean(L(l)) + (a && O(a) ? " · " + O(a) : "") }), el("b", { text: fixed || V(a) }))));
+    host.append(card("Profiel", kv));
+
+    // AMF
+    const amf = el("ul", { class: "rows" });
+    [8, 9, 10, 11].forEach(r => {
+      const rel = T("C" + r) || L("C" + r);
+      const sub = [V("B" + r), rel && rel !== "-" ? rel : "", O("B" + r)].filter(Boolean).join(" · ");
+      amf.append(el("li", O("B" + r) ? { class: "oudrij" } : null, el("div", { class: "name" }, el("b", { text: L("A" + r) }), el("small", { text: sub })), badge(T("D" + r))));
+    });
+    amf.append(el("li", { class: "total" }, el("div", { class: "name" }, el("b", { text: L("A12") })), badge(T("D12"), true)));
+    amf.append(el("li", O("B13") ? { class: "oudrij" } : null, el("div", { class: "name" }, el("b", { text: L("A13") }), el("small", { text: [V("B13"), O("B13")].filter(Boolean).join(" · ") })), badge(T("D13"))));
+    host.append(card(L("A6") || "AMF resultaten", amf));
+
+    // FPM
+    const fpm = el("ul", { class: "rows" });
+    let anyF = false;
+    for (let r = 16; r <= 22; r++) {
+      if (T("B" + r) || T("D" + r)) anyF = true;
+      const sub = [T("B" + r) ? "Resultaat " + T("B" + r) : "", T("C" + r) ? "norm " + T("C" + r) : "", O("B" + r)].filter(Boolean).join(" · ");
+      fpm.append(el("li", O("B" + r) ? { class: "oudrij" } : null, el("div", { class: "name" }, el("b", { text: L("A" + r) }), el("small", { text: sub || "–" })), badge(T("D" + r))));
+    }
+    fpm.append(el("li", { class: "total" + (O("D23") ? " oudrij" : "") }, el("div", { class: "name" }, el("b", { text: L("A23") }), O("D23") ? el("small", { text: O("D23") }) : null), badge(T("D23"), true)));
+    host.append(card(L("A14") || "FPM resultaten", anyF ? fpm : el("p", { class: "empty", text: "Geen FPM-gegevens voor deze persoon." })));
+
+    // Kracht
+    const krRows = [];
+    for (let r = 27; r <= 33; r++) krRows.push({ r, naam: L("A" + r), basis: L("B" + r), ratio: L("C" + r), rm: N("D" + r), txt: T("D" + r) });
+    const kr = el("ul", { class: "rows" });
+    krRows.forEach(k => kr.append(el("li", O("D" + k.r) ? { class: "oudrij" } : null, el("div", { class: "name" }, el("b", { text: k.naam }), el("small", { text: [k.basis + " × " + k.ratio, O("D" + k.r)].filter(Boolean).join(" · ") })), el("b", { text: k.txt ? k.txt + " kg" : "–" }))));
+    const sel = el("select", { class: "fill", id: "selRm", "aria-label": "Oefening" });
+    krRows.forEach((k, i) => sel.append(el("option", { value: String(i), text: k.naam })));
+    const def = Number((data.invoer || {}).B36) - 27; sel.value = String(def >= 0 && def < krRows.length ? def : 0);
+    const rmOut = el("div");
+    const drawRm = () => {
+      const k = krRows[Number(sel.value)]; rmOut.textContent = "";
+      if (k.rm === null) { rmOut.append(el("p", { class: "empty", text: "Geen 1RM bekend voor deze oefening." })); return; }
+      const tb = el("table", null, el("thead", null, el("tr", null, el("th", { text: "% 1RM" }), el("th", { text: "kg" }), el("th", { text: "reps" }), el("th", { text: "doel" }))));
+      const body = el("tbody");
+      (data.rm || []).forEach(x => body.append(el("tr", null, el("td", { text: nl(xround(x.pct * 100, 4), 0) + "%" }), el("td", { text: nl(xround(k.rm * x.pct, 1), 1) }), el("td", { text: String(x.reps) }), el("td", { text: x.doel, style: "text-align:left" }))));
+      tb.append(body);
+      rmOut.append(el("div", { class: "out" }, el("span", O("D" + k.r) ? { class: "oudtxt", text: "1RM " + k.naam + " · " + O("D" + k.r) } : { text: "1RM " + k.naam }), el("b", { text: nl(k.rm, 1) + " kg" })), el("div", { class: "tablewrap", style: "margin-top:10px" }, tb));
+    };
+    sel.addEventListener("change", drawRm); drawRm();
+    host.append(card(L("A25") || "Kracht", kr, el("h3", { text: "% van 1RM" }), sel, rmOut));
+
+    // Loop
+    const b50 = N("B50"), b72 = N("B72");
+    const inD = el("input", { type: "number", inputmode: "decimal", class: "fill", value: String((data.invoer || {}).B51 ?? 400) });
+    const inP = el("input", { type: "number", inputmode: "decimal", class: "fill", value: String((data.invoer || {}).E51 ?? 80) });
+    const riOut = el("div", { class: "out" });
+    const drawRi = () => {
+      riOut.textContent = "";
+      const d = parseFloat(inD.value.replace(",", ".")), pc = parseFloat(inP.value.replace(",", "."));
+      if (b50 === null) { riOut.append(el("span", { text: "Geen 1000m-waarde bekend" }), el("b", { text: "–" })); return; }
+      if (!isFinite(d) || !isFinite(pc) || d <= 0 || pc <= 0) { riOut.append(el("span", { text: "Vul afstand en % in" }), el("b", { text: "" })); return; }
+      const t = xround(b50 * Math.pow(d / 1000, 1.06) * (100 / pc), 1);
+      riOut.append(el("span", { text: clean(L("A54")) }), el("b", { text: nl(t, 1, true) }),
+        el("span", { text: clean(L("A55")) }), el("b", { text: mmss(t) }),
+        el("span", { text: clean(L("A56")) }), el("b", { text: nl(xround(t * 1000 / d, 1), 1) }));
+    };
+    inD.addEventListener("input", drawRi); inP.addEventListener("input", drawRi); drawRi();
+
+    const pcts = data.pcts || [];
+    const tb = el("table", null, el("thead", null, el("tr", null, el("th", { text: "Afstand" }), ...pcts.map(x => el("th", { text: nl(xround(x * 100, 4), 0) + "%" })))));
+    const tbody = el("tbody");
+    (data.afstanden || []).forEach(a => {
+      const base = a.basis === "B72" ? b72 : b50;
+      tbody.append(el("tr", null, el("td", { text: a.label }), ...pcts.map(x => {
+        if (base === null) return el("td", { text: "–" });
+        const p100 = xround(x * 100, 6);
+        return el("td", { text: mmss(xround(base * Math.pow(a.m / 1000, 1.06) * (100 / p100), 0)) });
+      })));
+    });
+    tb.append(tbody);
+    host.append(card(L("A49") || "Looptraining",
+      el("div", { class: "out", style: "margin-top:0" }, el("span", O("B50") ? { class: "oudtxt", text: clean(L("A50")) + " · " + O("B50") } : { text: clean(L("A50")) }), el("b", { text: V("B50") }), el("span", O("B72") ? { class: "oudtxt", text: clean(L("A72")) + " · " + O("B72") } : { text: clean(L("A72")) }), el("b", { text: b72 === null ? "–" : nl(xround(b72, 1), 1) })),
+      el("div", { class: "row2" }, el("div", null, el("label", { class: "f", text: "Afstand (m)" }), inD), el("div", null, el("label", { class: "f", text: "% (50–100)" }), inP)),
+      riOut,
+      el("h3", { text: clean(L("A58")) || "Trainingsafstanden" }), el("div", { class: "tablewrap" }, tb)));
+
+    // Speedmars
+    const inKg = el("input", { type: "number", inputmode: "decimal", class: "fill", value: String((data.invoer || {}).B78 ?? 15) });
+    const inMin = el("input", { type: "number", inputmode: "decimal", class: "fill", value: String((data.invoer || {}).B81 ?? 60) });
+    const inKm = el("input", { type: "number", inputmode: "decimal", class: "fill", value: String((data.invoer || {}).B86 ?? 9) });
+    const fOut = el("div", { class: "out" }), c1 = el("div", { class: "out" }), c2 = el("div", { class: "out" });
+    const factor = kg => {
+      let f = 1, cat = "";
+      if (isFinite(kg)) for (const b of (data.bepakking || [])) if (kg >= b.kg) { f = b.factor; cat = b.cat; }
+      return { f, cat };
+    };
+    const drawSm = () => {
+      const kg = parseFloat(inKg.value.replace(",", "."));
+      const { f, cat } = factor(kg);
+      fOut.textContent = ""; c1.textContent = ""; c2.textContent = "";
+      fOut.append(el("span", { text: "Pace-factor" }), el("b", { text: nl(f, 2, true) }), el("span", { text: "Categorie" }), el("b", { text: cat || "–" }));
+      const t = parseFloat(inMin.value.replace(",", "."));
+      if (isFinite(t)) {
+        const afst = xround((10 / 60) * t / f, 2);
+        const pace = afst === 0 ? null : xround(t * 60 / afst, 0);
+        c1.append(el("span", { text: "Realistische afstand" }), el("b", { text: nl(afst, 2, true) + " km" }), el("span", { text: "Pace per km" }), el("b", { text: pace === null ? "–" : mmss(pace) + " min/km" }));
+      }
+      const km = parseFloat(inKm.value.replace(",", "."));
+      if (isFinite(km)) {
+        const tijd = xround(km * 6 * f, 1);
+        const pace = tijd === 0 || km === 0 ? null : xround(tijd * 60 / km, 0);
+        c2.append(el("span", { text: "Realistische tijd" }), el("b", { text: nl(tijd, 1, true) + " min" }), el("span", { text: "Pace per km" }), el("b", { text: pace === null ? "–" : mmss(pace) + " min/km" }));
+      }
+    };
+    [inKg, inMin, inKm].forEach(i => i.addEventListener("input", drawSm)); drawSm();
+
+    const adv = el("div", { class: "out" },
+      el("span", O("B91") ? { class: "oudtxt", text: clean(L("A91")) + " · " + O("B91") } : { text: clean(L("A91")) }), el("b", { text: V("B91") }),
+      el("span", { text: clean(L("D91")) + " / " + clean(L("G91")) }), el("b", { text: V("E91") + " / " + V("H91") }),
+      el("span", { text: clean(L("A92")) }), el("b", { text: V("B92") }),
+      el("span", { text: clean(L("D92")) }), el("b", { text: V("E92") }));
+    const st = el("ul", { class: "rows", style: "margin-top:8px" },
+      el("li", null, el("div", { class: "name" }, el("b", { text: clean(L("A94")) || "Status" })), el("span", { class: "status", text: V("B94") })),
+      el("li", null, el("div", { class: "name" }, el("b", { text: clean(L("A95")) || "Frequentie" }), el("small", { text: V("B95") }))),
+      el("li", null, el("div", { class: "name" }, el("b", { text: clean(L("A96")) || "Interval" }), el("small", { text: V("B96") }))));
+
+    host.append(card(L("A76") || "Speedmars",
+      L("A77") ? el("p", { class: "note", style: "margin-top:0", text: L("A77") }) : null,
+      el("label", { class: "f", text: "Bepakking (kg)" }), inKg, fOut,
+      el("h3", { text: clean(L("A80")) || "Hoe ver kom ik?" }), el("label", { class: "f", text: "Tijd (min)" }), inMin, c1,
+      el("h3", { text: clean(L("A85")) || "Hoe lang doe ik erover?" }), el("label", { class: "f", text: "Afstand (km)" }), inKm, c2));
+    host.append(card(L("A90") || "Trainingsadvies", adv, st));
+  }
+
+  function toonPersoon(data, hist, host, p) {
+    const { toon, rows, terugval, namen } = kiesWeergave(data, hist, p);
+    renderPerson(data, host, toon);
+    if (namen.length) host.prepend(el("div", { class: "banner" }, el("b", { text: "Deels aangevuld uit de historie" }),
+      "Uit een eerdere test: " + namen.join(", ") + ". Deze onderdelen zijn geel gemarkeerd. De rest is nieuw. Het AMF-totaal blijft leeg tot alle onderdelen opnieuw getest zijn."));
+    if (terugval) {
+      const dat = testDatum(rows[rows.length - 1]);
+      host.querySelectorAll(".card").forEach(c => { c.classList.add("oud"); const h = c.querySelector("h2"); if (h) h.textContent += " · test " + dat; });
+      host.prepend(el("div", { class: "banner" }, el("b", { text: "Geen nieuwe test ingevoerd" }),
+        "Dit is de laatste uitslag uit de historie: test van " + testDatum(rows[rows.length - 1]) + ". FPM-scores per onderdeel, normen en trainingsadvies staan niet in de historie."));
+    }
+    if (rows.length) {
+      const lijst = el("div");
+      rows.slice().reverse().forEach((row, i) => {
+        const sum = el("summary", null, el("span", { class: "dt", text: testDatum(row) + (terugval && i === 0 ? " (hierboven)" : "") }));
+        if (row.t["amf totaal"]) sum.append(badge(row.t["amf totaal"]));
+        if (row.t["fpm eind"]) sum.append(badge(row.t["fpm eind"]));
+        const out = el("div", { class: "out" });
+        row.lijst.forEach(([k, v]) => out.append(el("span", { text: k }), el("b", { text: v })));
+        lijst.append(el("details", { class: "hist" }, sum, out));
+      });
+      host.append(card("Eerdere tests (" + rows.length + ")", lijst));
+    }
+  }
+
+  /** Eén geopend uitslagenbestand. `zoek` geeft de persoon of null; `toon` tekent hem in `host`. */
+  function maak(data) {
+    controleer(data);
+    const { index, hist } = bouwIndex(data);
+    return Object.freeze({
+      gemaakt: String(data.gemaakt || ""),
+      aantal: index.size,
+      zoek: (vnr) => { const key = String(vnr == null ? "" : vnr).trim(); return (key && index.get(key)) || null; },
+      weergave: (p) => kiesWeergave(data, hist, p),
+      toon: (host, p) => toonPersoon(data, hist, host, p)
+    });
+  }
+
+  const api = Object.freeze({ UitslagFout, controleer, maak });
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.Uitslagen = api;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+"use strict";
+/* COMBATREADY (marinier) - schermen. Gebruikt Kluis (versleuteling) en Logboek (rekenregels). */
+(() => {
+const { Basis, Kluis, Logboek, FitLezer, Analyse, Grafiek, Brievenbus, Overzicht, Uitslagen } = globalThis;
+const { $, el, msg, busy } = Basis;
+const IDLE_MS = 10 * 60 * 1000;      // na 10 min niets doen: slot
+const HIDDEN_MS = 2 * 60 * 1000;     // app 2 min op achtergrond: slot
+const MAX_BESTAND_BYTES = 5 * 1024 * 1024;
+const DBNAAM = "mpt-log";            // eigen opslag, los van de andere MPT-apps
+const KV_ROOSTER = "rooster";
+const KV_LOG = "log";
+const KV_UITSLAGEN = "uitslagen";    // versleuteld uitslagenbestand van de groep (MPT), optioneel
+const MIN_ZOEK = 6;                  // vanaf zoveel cijfers melden dat een V-nummer niet bestaat
+const FIT_KNOP = "Horlogebestand toevoegen (.fit)";
+const opslag = Basis.maakOpslag(DBNAAM);
+
+let omhulsel = null;   // versleuteld roosterbestand (mag bewaard worden)
+let omhulselUitslag = null;   // versleuteld uitslagenbestand; kan er ook zijn zonder rooster (zoals in de oude app MPT Persoon)
+let staat = null;      // { rooster, code, naam, logSleutel, log, uitslagen, uitslagMelding } alleen in geheugen
+let wachtend = null;   // { w, soort }: nieuw rooster- of brievenbus-bestand dat nog geopend moet worden
+let huidig = null;     // { item, meso, week } van de les die open staat
+let invoer = { status: null, zwaarte: null, fit: null };
+let wijzigMaxHs = false, wijzigVnr = false;
+let logMerk = null;    // kenmerk van het log zoals dit venster het voor het laatst bewaarde of las
+const TABS = { week: ["#tabWeek", "#navWeek"], trend: ["#tabTrend", "#navTrend"], uitslagen: ["#tabUitslagen", "#navUitslagen"], inlever: ["#tabInlever", "#navInlever"] };
+let tab = "week";      // gekozen tabblad in de balk onderaan
+let openDoel = null;   // { item, k } van de kaart "Eerste open les"
+
+/* ---------- hulpjes ---------- */
+function show(id) {
+  for (const s of document.querySelectorAll(".screen")) s.hidden = s.id !== id;
+  $("#btnLock").hidden = staat === null;
+  $("#tabs").hidden = id !== "scrWeek" || !staat || !staat.rooster;
+  if (id === "scrStart") $("#title").textContent = "";   // zonder rooster is er alleen het tabblad Uitslagen
+  scrollTo(0, 0);
+}
+function tekenTab() {
+  for (const [naam, [paneel, knop]] of Object.entries(TABS)) {
+    $(paneel).hidden = naam !== tab;
+    if (naam === tab) $(knop).setAttribute("aria-current", "page"); else $(knop).removeAttribute("aria-current");
+  }
+  $("#bestandBlok").hidden = tab === "trend";   // importeren hoort bij het rooster (Week) en bij de brievenbus (Inleveren)
+}
+function kiesTab(naam) {
+  if (naam === tab) return;
+  tab = naam;
+  stopNieuwRooster();
+  msg($("#msgWeek"), ""); msg($("#msgInlever"), ""); msg($("#msgUitslagen"), "");
+  tekenTab();
+  scrollTo(0, 0);
+}
+const foutTekst = (e) => (e instanceof Kluis.KluisFout || e instanceof Logboek.LogFout || e instanceof FitLezer.FitFout || e instanceof Brievenbus.BusFout || e instanceof Uitslagen.UitslagFout ? e.message : "Er ging iets mis. Probeer het opnieuw.");
+const OPSLAAN_MISLUKT = "Opslaan op dit toestel is mislukt. Je wijziging is niet bewaard.";
+const ANDER_VENSTER = "Je log is in een ander venster gewijzigd. Open de app opnieuw; je laatste wijziging hier is niet bewaard.";
+const codeLabel = (code) => (code ? "Groep " + code : "Zonder groepscode");
+// "11-11-2026 20:00" -> "202611112000", om twee roosters op datum te vergelijken; null als de datum niet te lezen is.
+function volgorde(gemaakt) {
+  const m = /^(\d\d)-(\d\d)-(\d{4})(?: (\d\d):(\d\d))?/.exec(String(gemaakt || ""));
+  return m ? m[3] + m[2] + m[1] + (m[4] || "00") + (m[5] || "00") : null;
+}
+
+/* ---------- bestand kiezen ---------- */
+async function leesBestand(file) {
+  if (/\.xlsx$/i.test(file.name)) throw new Kluis.KluisFout("ONVERSLEUTELD");
+  const w = await Basis.leesJson(file, MAX_BESTAND_BYTES);
+  if (w === null) throw new Kluis.KluisFout("GEEN_MPT");
+  return { w, soort: Kluis.soortBestand(w) };
+}
+function kiesBestand() { $("#fileIn").value = ""; $("#fileIn").click(); }
+async function opBestand() {
+  const file = $("#fileIn").files[0];
+  if (!file) return;
+  const meld = staat ? $("#msgWeek") : $("#msgStart");
+  msg(meld, "");
+  try {
+    const { w, soort } = await leesBestand(file);
+    const isBus = soort === "brievenbus", isUitslag = soort === Kluis.SOORT_UITSLAGEN;
+    if (!staat && (omhulsel || omhulselUitslag)) return;   // op slot: een bestand dat nu nog binnenkomt (bijv. na het automatische slot) wordt niet bewaard
+    if (isBus && !(staat && staat.rooster)) return msg(meld, "Dit is het brievenbus-bestand. Importeer eerst het roosterbestand van je groep.");
+    if (!staat) return await eersteBestand(w, isUitslag ? KV_UITSLAGEN : KV_ROOSTER);
+    if ((w.code || "") !== staat.code) return msg(meld, "Dit bestand is van een andere groep (" + codeLabel(w.code) + "). Jouw gegevens horen bij " + codeLabel(staat.code) + ".");
+    wachtend = { w, soort };
+    tab = isBus ? "inlever" : (isUitslag || !staat.rooster ? "uitslagen" : "week");
+    tekenTab();
+    $("#nieuwTitel").textContent = isBus ? "Brievenbus" : (isUitslag ? "Uitslagen" : "Nieuw rooster");
+    if (isUitslag) {
+      $("#nieuwInfo").textContent = "Uitslagen van " + (w.gemaakt || "?") + ". Typ het wachtwoord van je groep om ze te openen.";
+      return vraagWachtwoord();
+    }
+    const isOuder = !isBus && omhulsel !== null && volgorde(w.gemaakt) !== null && volgorde(omhulsel.gemaakt) !== null && volgorde(w.gemaakt) < volgorde(omhulsel.gemaakt);
+    $("#nieuwInfo").textContent = (isBus ? "Brievenbus van " : "Rooster van ") + (w.gemaakt || "?") + ". Typ het wachtwoord van je groep om het te openen." + (isBus || !omhulsel ? "" : " Je log blijft bewaard.")
+      + (isOuder ? " Let op: dit rooster is ouder dan het rooster dat je nu hebt (van " + omhulsel.gemaakt + ")." : "");
+    vraagWachtwoord();
+  } catch (e) { msg(meld, foutTekst(e)); }
+}
+function vraagWachtwoord() {
+  $("#nieuwCard").hidden = false;
+  $("#nieuwCard").scrollIntoView({ block: "center" });   // op iPhone staat de kaart anders onder de balk van Safari
+  $("#pwNieuw").focus({ preventScroll: true });
+}
+// Eerste bestand op een leeg toestel (rooster of uitslagen): bewaren en om het wachtwoord vragen.
+async function eersteBestand(w, sleutel) {
+  try { await opslag.setAlles({ [sleutel]: w }); } catch (_) { return msg($("#msgStart"), OPSLAAN_MISLUKT); }
+  if (sleutel === KV_ROOSTER) omhulsel = w; else omhulselUitslag = w;
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  slotScherm();
+}
+
+/* ---------- slot ---------- */
+function slotScherm(melding) {
+  $("#title").textContent = "";   // op start- en slotscherm staat het merk groot in beeld; niet nog eens in de kop
+  const hoofd = omhulsel || omhulselUitslag;
+  $("#lockInfo").textContent = [codeLabel(hoofd.code), omhulsel ? "rooster van " + (omhulsel.gemaakt || "?") : "", omhulselUitslag ? "uitslagen van " + (omhulselUitslag.gemaakt || "?") : ""]
+    .filter(Boolean).join(" · ") + ". Typ het wachtwoord van je groep.";
+  msg($("#msgLock"), melding || "");
+  show("scrLock");
+}
+async function ontgrendel() {
+  const veld = $("#pwUnlock"), knop = $("#btnUnlock");
+  const pw = veld.value;
+  veld.value = "";                    // meteen leeg: telefoon vraagt dan niet om het te bewaren
+  if (!pw) return msg($("#msgLock"), "Typ het wachtwoord.");
+  msg($("#msgLock"), "");
+  busy(knop, true, "Bezig…");
+  try {
+    if (!omhulsel) {                      // alleen uitslagen op dit toestel
+      const geopend = await Kluis.openUitslagen(omhulselUitslag, pw);
+      staat = { rooster: null, code: geopend.code, naam: geopend.naam, logSleutel: null, log: null, uitslagen: Uitslagen.maak(geopend.data), uitslagMelding: "" };
+      return weekScherm();
+    }
+    const geopend = await Kluis.openRooster(omhulsel, pw);
+    const bewaard = await opslag.get(KV_LOG);
+    if (!bewaard && !isGoedRooster(geopend.rooster)) return await weigerEersteRooster();
+    Logboek.controleerRooster(geopend.rooster);
+    let logSleutel, log, logOmhulsel = bewaard;
+    if (logOmhulsel) {
+      logSleutel = await Kluis.bestaandeLogSleutel(pw, logOmhulsel);
+      log = Logboek.controleerLog(await Kluis.ontsleutelLog(logOmhulsel, logSleutel));
+    } else {
+      logSleutel = await Kluis.nieuweLogSleutel(pw);
+      log = Logboek.leegLog();
+      logOmhulsel = await Kluis.versleutelLog(log, logSleutel);
+      await opslag.setAlles({ [KV_LOG]: logOmhulsel });
+    }
+    logMerk = logOmhulsel.iv;
+    staat = { rooster: geopend.rooster, code: geopend.code, naam: geopend.naam, logSleutel, log, ...(await openBewaardeUitslagen(pw)) };
+    tab = "week";
+    weekScherm();
+  } catch (e) {
+    msg($("#msgLock"), foutTekst(e));
+  } finally {
+    busy(knop, false, "Open");
+    armIdle();
+  }
+}
+// Uitslagen gaan open met hetzelfde wachtwoord als het rooster. Lukt dat niet, dan werkt de rest gewoon en zegt het tabblad waarom.
+async function openBewaardeUitslagen(pw) {
+  const w = await opslag.get(KV_UITSLAGEN);
+  if (!w) return { uitslagen: null, uitslagMelding: "" };
+  try { return { uitslagen: Uitslagen.maak((await Kluis.openUitslagen(w, pw)).data), uitslagMelding: "" }; }
+  catch (e) {
+    const isWachtwoord = e instanceof Kluis.KluisFout && e.code === "WACHTWOORD";
+    return { uitslagen: null, uitslagMelding: isWachtwoord
+      ? "De uitslagen (van " + (w.gemaakt || "?") + ") gaan niet open met het wachtwoord van het rooster. Importeer het uitslagenbestand opnieuw met het juiste wachtwoord."
+      : foutTekst(e) };
+  }
+}
+const isGoedRooster = (rooster) => { try { Logboek.controleerRooster(rooster); return true; } catch (_) { return false; } };
+// Eerste rooster blijkt na openen onbruikbaar en er is nog niets gelogd: weghalen, zodat een goed bestand geïmporteerd kan worden.
+// Uitslagen die er al stonden blijven staan.
+async function weigerEersteRooster() {
+  if (omhulselUitslag) await opslag.setAlles({ [KV_ROOSTER]: null }); else await opslag.wisAlles();
+  omhulsel = null;
+  if (omhulselUitslag) return slotScherm(new Logboek.RoosterFout().message);
+  show("scrStart");
+  msg($("#msgStart"), new Logboek.RoosterFout().message);
+}
+function vergrendel(melding) {
+  logMerk = null;
+  staat = null; wachtend = null; huidig = null; tab = "week"; openDoel = null; invoer = { status: null, zwaarte: null, fit: null }; wijzigMaxHs = false; wijzigVnr = false;
+  $("#openLes").hidden = true; $("#openLes").style.borderLeftColor = "";
+  for (const id of ["#weekKeuze", "#tegels", "#openLes", "#dagen", "#lesKop", "#dataInfo", "#weekTitel", "#nieuwInfo", "#fitKort", "#analyse", "#trend", "#inlever"]) $(id).textContent = "";
+  for (const id of ["#msgWeek", "#msgLes", "#msgNieuw", "#msgFit", "#msgInlever", "#msgUitslagen", "#msgZoek"]) msg($(id), "");
+  for (const id of ["#pwUnlock", "#pwNieuw", "#minuten", "#fileIn", "#fitIn", "#q"]) $(id).value = "";
+  for (const id of ["#person", "#uitslagInfo", "#uitslagLeegTekst"]) $(id).textContent = "";   // ook gekozen bestanden loslaten
+  tekenInvoer(); tekenTab();
+  $("#btnFit").textContent = FIT_KNOP; $("#btnFitWis").hidden = true; $("#nieuwTitel").textContent = "Nieuw rooster";   // ook knopteksten verraden iets over de laatste les
+  $("#lesKop").style.borderLeftColor = "";
+  $("#nieuwCard").hidden = true;
+  slot.stop();
+  if (omhulsel || omhulselUitslag) slotScherm(melding); else show("scrStart");
+}
+async function wisAlles() {
+  if (!confirm("Alles van dit toestel wissen? Je rooster, je uitslagen én je log worden verwijderd. Dit kan niet ongedaan worden gemaakt.")) return;
+  try { await opslag.wisAlles(); } catch (_) { return msg($("#msgLock"), "Wissen is mislukt. Probeer het opnieuw."); }
+  omhulsel = null; omhulselUitslag = null;
+  vergrendel();
+}
+
+/* ---------- log bewaren ---------- */
+// Twee vensters: als het bewaarde log niet meer is wat dit venster kent, niet overschrijven maar vergrendelen.
+async function controleerLogMerk() {
+  const bewaard = await opslag.get(KV_LOG);
+  if ((bewaard ? bewaard.iv : null) === logMerk) return;
+  omhulsel = (await opslag.get(KV_ROOSTER)) || null;
+  omhulselUitslag = (await opslag.get(KV_UITSLAGEN)) || null;
+  vergrendel(ANDER_VENSTER);
+  throw new Error("ander venster");
+}
+async function bewaarLog(nieuwLog) {
+  await controleerLogMerk();
+  const logOmhulsel = await Kluis.versleutelLog(nieuwLog, staat.logSleutel);
+  if (!staat) throw new Error("vergrendeld");   // vergrendeld tijdens het versleutelen: niets bewaren, niets terugzetten
+  await opslag.setAlles({ [KV_LOG]: logOmhulsel });
+  if (!staat) return;
+  logMerk = logOmhulsel.iv;
+  staat = { ...staat, log: nieuwLog };
+}
+
+/* ---------- nieuw rooster (terwijl de app open is) ---------- */
+async function neemNieuwRooster() {
+  const veld = $("#pwNieuw"), knop = $("#btnNieuwOpen");
+  const pw = veld.value;
+  veld.value = "";
+  veld.blur();                        // toetsenbord dicht: Safari zet de pagina anders terug en de melding valt buiten beeld
+  if (!pw) return msg($("#msgNieuw"), "Typ het wachtwoord.");
+  msg($("#msgNieuw"), "");
+  busy(knop, true, "Bezig…");
+  try {
+    if (wachtend.soort === Kluis.SOORT_UITSLAGEN) {
+      const geopend = await Kluis.openUitslagen(wachtend.w, pw);   // eerst openen en controleren, dan pas bewaren
+      const uitslagen = Uitslagen.maak(geopend.data);
+      if (!staat || !wachtend) return;
+      await opslag.setAlles({ [KV_UITSLAGEN]: wachtend.w });
+      omhulselUitslag = wachtend.w;
+      wachtend = null;
+      staat = { ...staat, uitslagen, uitslagMelding: "" };
+      $("#nieuwCard").hidden = true;
+      weekScherm();
+      return msg($("#msgUitslagen"), "Uitslagen geopend. Zoek op V-nummer.", "ok");
+    }
+    if (wachtend.soort === "brievenbus") {
+      const bus = await Kluis.openBrievenbusBestand(wachtend.w, pw);
+      const oud = staat.log.bus;
+      if (oud && oud.publiek !== bus.publiek && !confirm("Dit is een andere brievenbus dan die je al had (van " + (oud.gemaakt || "?") + "). Daarna gaan je logs naar wie deze nieuwe brievenbus heeft gemaakt. Importeer hem alleen als je instructeur zelf heeft gezegd dat er een nieuwe is. Doorgaan?")) {
+        stopNieuwRooster();
+        return msg($("#msgInlever"), "Brievenbus niet gewijzigd.", "ok");
+      }
+      await bewaarLog(Logboek.metBus(staat.log, bus.publiek, bus.gemaakt));
+      wachtend = null;
+      $("#nieuwCard").hidden = true;
+      weekScherm();
+      return msg($("#msgInlever"), "Brievenbus ingesteld. Je kunt nu je log inleveren.", "ok");
+    }
+    const geopend = await Kluis.openRooster(wachtend.w, pw);
+    Logboek.controleerRooster(geopend.rooster);      // eerst controleren, dan pas bewaren
+    if (!staat.rooster) return await eersteRoosterErbij(geopend, pw);
+    await controleerLogMerk();
+    const logSleutel = await Kluis.nieuweLogSleutel(pw);
+    const logOmhulsel = await Kluis.versleutelLog(staat.log, logSleutel);
+    if (!staat || !wachtend) return;              // vergrendeld of geannuleerd terwijl het bestand werd geopend
+    await opslag.setAlles({ [KV_ROOSTER]: wachtend.w, [KV_LOG]: logOmhulsel });
+    logMerk = logOmhulsel.iv;
+    omhulsel = wachtend.w; wachtend = null;
+    staat = { ...staat, rooster: geopend.rooster, naam: geopend.naam, logSleutel };
+    $("#nieuwCard").hidden = true;
+    tab = "week";
+    weekScherm("Nieuw rooster geopend. Je log is bewaard.");
+  } catch (e) {
+    if (staat) msg($("#msgNieuw"), e instanceof Kluis.KluisFout || e instanceof Logboek.LogFout || e instanceof Uitslagen.UitslagFout ? e.message : OPSLAAN_MISLUKT);
+  } finally {
+    busy(knop, false, "Open");
+  }
+}
+// Er stonden alleen uitslagen; nu komt het rooster erbij en daarmee het log (een bestaand log gaat open met hetzelfde wachtwoord).
+async function eersteRoosterErbij(geopend, pw) {
+  const bewaard = await opslag.get(KV_LOG);
+  let logSleutel, log, logOmhulsel = bewaard;
+  if (bewaard) {
+    logSleutel = await Kluis.bestaandeLogSleutel(pw, bewaard);
+    log = Logboek.controleerLog(await Kluis.ontsleutelLog(bewaard, logSleutel));
+  } else {
+    logSleutel = await Kluis.nieuweLogSleutel(pw);
+    log = Logboek.leegLog();
+    logOmhulsel = await Kluis.versleutelLog(log, logSleutel);
+  }
+  if (!staat || !wachtend) return;
+  await opslag.setAlles({ [KV_ROOSTER]: wachtend.w, [KV_LOG]: logOmhulsel });
+  logMerk = logOmhulsel.iv;
+  omhulsel = wachtend.w; wachtend = null;
+  staat = { ...staat, rooster: geopend.rooster, naam: geopend.naam || staat.naam, logSleutel, log };
+  $("#nieuwCard").hidden = true;
+  tab = "week";
+  weekScherm("Rooster geopend. Je kunt nu je lessen loggen.");
+}
+function stopNieuwRooster() { wachtend = null; $("#pwNieuw").value = ""; msg($("#msgNieuw"), ""); $("#nieuwCard").hidden = true; }
+
+/* ---------- weekscherm ---------- */
+const DISC = [["hardlopen", "#7FA7D0"], ["speedmars", "#9C8BC4"], ["marsen", "#8FB07A"], ["kracht", "#E0A07A"], ["mma", "#D98A94"],
+  ["zwemmen", "#6FB3BA"], ["oriëntatie", "#C9A96A"], ["orientatie", "#C9A96A"], ["combi", "#A99A80"], ["hiba", "#A99A80"],
+  ["klito", "#7EA6B3"], ["toba", "#7EA6B3"], ["touwbaan", "#7EA6B3"], ["ski", "#8E9BA8"]];
+const discKleur = (d) => { const l = String(d || "").toLowerCase(); for (const [k, c] of DISC) if (l.includes(k)) return c; return "var(--line)"; };
+
+function huidigeKeuze(mesos) {
+  const keuze = staat.log.keuze || {};
+  const mi = Math.max(0, mesos.findIndex((m) => String(m.naam) === keuze.meso));
+  const wi = Math.max(0, mesos[mi].weken.findIndex((w) => String(w.wk) === keuze.wk));
+  return { meso: mesos[mi], mi, week: mesos[mi].weken[wi], wi };
+}
+async function kies(meso, week) {
+  try { await bewaarLog(Logboek.metKeuze(staat.log, meso.naam, week.wk)); if (staat) weekScherm(); }
+  catch (_) { if (staat) { tekenTab(); msg($("#msgWeek"), OPSLAAN_MISLUKT); } }
+}
+function tekenKeuze(mesos, k) {
+  const host = $("#weekKeuze"); host.textContent = "";
+  if (mesos.length > 1) {
+    const sel = el("select", { class: "fill", name: "search-meso", autocomplete: "off", "aria-label": "Meso" });
+    mesos.forEach((m, i) => sel.append(el("option", { value: String(i), text: String(m.naam) })));
+    sel.value = String(k.mi);
+    sel.addEventListener("change", () => kies(mesos[Number(sel.value)], mesos[Number(sel.value)].weken[0]));
+    host.append(sel);
+  }
+  if (k.meso.sub) host.append(el("p", { class: "note", text: String(k.meso.sub) }));
+  const chips = el("div", { class: "chips", role: "group", "aria-label": "Week" });
+  k.meso.weken.forEach((w, i) => {
+    const b = el("button", { type: "button", text: "Wk " + w.wk, "aria-pressed": String(i === k.wi) });
+    b.addEventListener("click", () => kies(k.meso, w));
+    chips.append(b);
+  });
+  host.append(chips);
+}
+const tegel = (waarde, naam) => el("div", { class: "tegel" }, el("b", { text: waarde }), el("span", { text: naam }));
+function standVan(item) {
+  if (item.isVervallen) return { tekst: "Vervallen", soort: "vervallen" };
+  if (!item.log) return { tekst: "Open", soort: "" };
+  if (item.log.status === Logboek.STATUS_NIET) return { tekst: "Niet gedaan", soort: "niet" };
+  return { tekst: item.log.minuten + " min · " + item.log.zwaarte + "/10", soort: "gedaan" };
+}
+function dagRij(item, k) {
+  const dn = el("div", { class: "dn", text: item.dagNaam });
+  if (!item.nr) return el("div", { class: "dag" }, dn, el("div", { class: "les" }, el("span", { class: "meta", text: "Geen les" })));
+  const L = item.les;
+  const blok = el("div", { class: "les", style: "border-left-color:" + discKleur(L && L.d) });
+  blok.append(el("div", { class: "nr", text: item.nr + (L && L.d ? "  " + L.d : "") }), el("b", { text: L ? (L.les || L.d) : "Les " + item.nr + " (niet in Lessen)" }));
+  const meta = L ? [L.zone, [L.km, L.opdr].filter(Boolean).join(" · ")].filter(Boolean).join("  |  ") : "";
+  const fit = item.log && item.log.fit;
+  if (fit && !item.isVervallen) blok.append(el("div", { class: "meta", text: "Horloge: " + [Analyse.afstandTekst(fit.afstandM), fit.gemHartslag ? "gem. " + fit.gemHartslag + " bpm" : ""].filter((t) => t && t !== "–").join(" · ") }));
+  else if (item.isVervallen && item.log.status === Logboek.STATUS_GEDAAN) blok.append(el("div", { class: "meta", text: "Gelogd: " + item.log.minuten + " min · " + item.log.zwaarte + "/10" }));
+  else if (meta) blok.append(el("div", { class: "meta", text: meta }));
+  const stand = standVan(item);
+  const badge = el("span", { class: "stand " + stand.soort, text: stand.tekst });
+  if (item.isVervallen) return el("div", { class: "dag vervallen" }, dn, blok, badge);
+  const rij = el("button", { type: "button", class: "dag" }, dn, blok, badge);
+  rij.addEventListener("click", () => lesScherm(item, k));
+  return rij;
+}
+function weekScherm(melding) {
+  $("#title").textContent = staat.naam || codeLabel(staat.code);
+  msg($("#msgWeek"), melding || "", "ok");
+  msg($("#msgInlever"), ""); msg($("#msgUitslagen"), "");
+  tekenUitslagen();
+  if (!staat.rooster) {
+    tab = "uitslagen";
+    $("#dataInfo").textContent = "Alleen uitslagen · " + codeLabel(staat.code) + ". Importeer het roosterbestand om je lessen te loggen.";
+    tekenTab();
+    return show("scrWeek");
+  }
+  const mesos = Logboek.geldigeMesos(staat.rooster);
+  const dagen = $("#dagen"); dagen.textContent = ""; $("#tegels").textContent = "";
+  $("#dataInfo").textContent = "Rooster van " + (staat.rooster.gemaakt || omhulsel.gemaakt || "?") + " · " + codeLabel(staat.code);
+  if (!mesos.length) {
+    $("#weekKeuze").textContent = ""; $("#weekTitel").textContent = "Rooster"; $("#trend").textContent = "";
+    tekenOpenLes([], null);
+    dagen.append(el("p", { class: "empty", text: "Dit rooster bevat geen weken." }));
+    $("#trend").append(el("p", { class: "empty", text: "Dit rooster bevat geen weken." }));
+    tekenInlever(); tekenTab();
+    return show("scrWeek");
+  }
+  const k = huidigeKeuze(mesos);
+  tekenKeuze(mesos, k);
+  const items = Logboek.weekItems(staat.rooster, k.meso, k.week, staat.log);
+  const totaal = Logboek.weekTotaal(items);
+  tekenHeld(totaal);
+  tekenOpenLes(items, k);
+  tekenTrend(k, totaal);
+  $("#weekTitel").textContent = String(k.meso.titel || k.meso.naam) + " · week " + k.week.wk;
+  tekenInlever();
+  if (!items.some((i) => i.nr)) dagen.append(el("p", { class: "empty", text: "Voor deze week zijn nog geen lessen ingepland." }));
+  else items.forEach((item) => dagen.append(dagRij(item, k)));
+  tekenTab();
+  show("scrWeek");
+}
+// Bovenaan de week: ring met gedane lessen, de belasting groot, minuten en afstand klein.
+function tekenHeld(totaal) {
+  const lessen = totaal.gedaan + "/" + totaal.gepland;
+  const ring = el("div", { class: "ring" });
+  ring.append(Grafiek.ring(totaal.gepland ? totaal.gedaan / totaal.gepland : 0, lessen + " lessen gedaan"),
+    el("div", null, el("span", { class: "num", "data-w": "lessen", text: lessen }), el("span", { class: "label", text: "Lessen" })));
+  const mini = el("div", { class: "mini" }, el("span", null, el("b", { "data-w": "minuten", text: String(totaal.minuten) }), " min"),
+    totaal.afstandM ? el("span", null, el("b", { "data-w": "afstand", text: Analyse.afstandTekst(totaal.afstandM) }), " horloge") : null);
+  const n = totaal.vervallenGedaan;
+  const uitleg = n ? el("p", { class: "note", id: "vervallenUitleg", text: (n === 1 ? "1 vervallen les telt" : n + " vervallen lessen tellen") + " mee in de belasting, niet in de ring." }) : null;
+  $("#tegels").append(...[ring, el("div", { class: "heldcijfers" }, el("span", { class: "label", text: "Belasting" }),
+    el("span", { class: "num groot", "data-w": "belasting", text: String(totaal.belasting) }), mini), uitleg].filter(Boolean));
+}
+// Het rooster kent geen datums: de app weet niet welke les "de volgende" is, wel welke de eerste is die nog open staat.
+function tekenOpenLes(items, k) {
+  const knop = $("#openLes"), item = items.find((i) => i.nr && !i.log && !i.isVervallen);
+  knop.textContent = ""; knop.style.borderLeftColor = "";
+  knop.hidden = !item;
+  openDoel = item ? { item, k } : null;
+  if (!item) return;
+  const L = item.les;
+  knop.style.borderLeftColor = discKleur(L && L.d);
+  knop.append(el("span", null, el("span", { class: "label", text: "Eerste open les · " + item.dagNaam }), el("b", { text: L ? (L.les || L.d) : "Les " + item.nr }),
+    el("small", { text: item.nr + (L && L.d ? " " + L.d : "") })), el("i", { "aria-hidden": "true", text: "→" }));
+}
+function tekenTrend(k, totaal) {
+  const host = $("#trend"); host.textContent = "";
+  host.append(el("div", { class: "trendkop" },
+    el("div", null, el("span", { class: "label", text: "Week " + k.week.wk }), el("span", { class: "num", text: String(totaal.belasting) })),
+    el("span", { class: "pil", text: "week " + (k.wi + 1) + " van " + k.meso.weken.length })),
+    el("p", { class: "note", style: "margin:0 0 10px", text: String(k.meso.titel || k.meso.naam) }));
+  if (k.meso.weken.length < 2) return host.append(el("p", { class: "empty", text: "Dit meso heeft één week; er valt nog niets te vergelijken." }));
+  // Tikken op een week opent die week op het tabblad Week.
+  host.append(Grafiek.trend(Logboek.mesoTrend(staat.rooster, k.meso, staat.log), String(k.week.wk),
+      (wk) => { tab = "week"; kies(k.meso, k.meso.weken.find((w) => String(w.wk) === wk)); }),
+    el("p", { class: "note", text: "Tik op een week om hem te openen." }));
+}
+
+/* ---------- les loggen ---------- */
+function tekenInvoer() {
+  $("#btnGedaan").setAttribute("aria-pressed", String(invoer.status === Logboek.STATUS_GEDAAN));
+  $("#btnNiet").setAttribute("aria-pressed", String(invoer.status === Logboek.STATUS_NIET));
+  $("#gedaanVelden").hidden = invoer.status !== Logboek.STATUS_GEDAAN;
+  for (const b of $("#zwaarte").children) b.setAttribute("aria-pressed", String(Number(b.textContent) === invoer.zwaarte));
+}
+function zetInvoer(deel) { invoer = { ...invoer, ...deel }; msg($("#msgLes"), ""); tekenInvoer(); }
+function lesScherm(item, k) {
+  huidig = { item, meso: k.meso, week: k.week };
+  const L = item.les, kop = $("#lesKop");
+  kop.textContent = ""; kop.className = "card leskop"; kop.style.borderLeftColor = discKleur(L && L.d);
+  kop.append(el("div", { class: "nr", text: item.dagNaam + " · les " + item.nr + (L && L.d ? " · " + L.d : "") }), el("b", { text: L ? (L.les || L.d) : "Les " + item.nr }));
+  for (const regel of L ? [L.zone, L.km, L.opdr].filter(Boolean) : []) kop.append(el("div", { class: "muted", text: regel }));
+  invoer = { status: item.log ? item.log.status : null, zwaarte: item.log ? item.log.zwaarte : null, fit: (item.log && item.log.fit) || null };
+  wijzigMaxHs = false;
+  msg($("#msgFit"), "");
+  tekenFit();
+  $("#minuten").value = item.log && item.log.minuten ? String(item.log.minuten) : "";
+  $("#btnLogWis").hidden = !item.log;
+  msg($("#msgLes"), "");
+  tekenInvoer();
+  show("scrLes");
+}
+function isGewijzigd() {
+  const log = huidig.item.log, minuten = $("#minuten").value.trim();
+  if (!log) return invoer.status !== null || invoer.zwaarte !== null || invoer.fit !== null || minuten !== "";
+  return invoer.status !== log.status || invoer.fit !== (log.fit || null)
+    || (invoer.status === Logboek.STATUS_GEDAAN && (invoer.zwaarte !== log.zwaarte || minuten !== (log.minuten ? String(log.minuten) : "")));
+}
+function terugNaarWeek() {
+  if (isGewijzigd() && !confirm("Je wijziging is nog niet opgeslagen. Toch terug naar de week?")) return;
+  huidig = null;
+  weekScherm();
+}
+async function slaLesOp() {
+  const controle = Logboek.valideerInvoer({ ...invoer, minuten: $("#minuten").value });
+  if (!controle.ok) return msg($("#msgLes"), controle.melding);
+  if (invoer.fit && controle.waarde.status === Logboek.STATUS_NIET && !confirm("Bij 'Niet gedaan' wordt het horlogebestand van deze les verwijderd. Doorgaan?")) return;
+  const nieuw = Logboek.metLog(staat.log, huidig.meso.naam, huidig.week.wk, huidig.item, controle.waarde, new Date().toISOString(), invoer.fit);
+  try { await bewaarLog(nieuw); } catch (_) { return staat && msg($("#msgLes"), OPSLAAN_MISLUKT); }
+  if (!staat) return;
+  huidig = null;
+  weekScherm("Opgeslagen.");
+}
+async function wisLes() {
+  if (!confirm("Log van deze les wissen?")) return;
+  try { await bewaarLog(Logboek.zonderLog(staat.log, huidig.item.sleutel)); } catch (_) { return staat && msg($("#msgLes"), OPSLAAN_MISLUKT); }
+  if (!staat) return;
+  huidig = null;
+  weekScherm("Log gewist.");
+}
+
+/* ---------- horlogebestand (.fit) bij de les ---------- */
+const kaart = (titel, ...kids) => el("div", { class: "card" }, el("h2", { text: titel }), ...kids);
+function kiesFit() { $("#fitIn").value = ""; $("#fitIn").click(); }
+async function opFit() {
+  const file = $("#fitIn").files[0];
+  if (!file || !huidig) return;
+  msg($("#msgFit"), "");
+  try {
+    if (file.size > FitLezer.MAX_BYTES) throw new FitLezer.FitFout("TE_GROOT");
+    const activiteit = Analyse.maakActiviteit(FitLezer.leesFit(await file.arrayBuffer()));
+    invoer = { ...invoer, fit: activiteit, status: Logboek.STATUS_GEDAAN };
+    if (activiteit.duurSec) $("#minuten").value = String(Math.min(Logboek.MAX_MINUTEN, Math.max(1, Math.round(activiteit.duurSec / 60))));
+    tekenInvoer(); tekenFit();
+    msg($("#msgFit"), "Ingelezen. Kies de zwaarte en tik op Opslaan.", "ok");
+  } catch (e) { msg($("#msgFit"), foutTekst(e)); }
+}
+function wisFit() {
+  invoer = { ...invoer, fit: null };
+  tekenFit();
+  msg($("#msgFit"), "Horlogebestand verwijderd. Tik op Opslaan om dit te bewaren.", "ok");
+}
+function verloopKaart(a) {
+  const r = a.reeks, tijd = Analyse.duurTekst;
+  const metTempo = Analyse.gebruiktTempo(a.sport);
+  const snelheid = r.v.map((v) => (v === null ? null : (metTempo ? (v >= Analyse.MIN_TEMPO_MS ? 1000 / v : null) : v * 3.6)));
+  const hoogtes = r.h.filter((h) => h !== null);
+  const grafieken = [
+    Grafiek.lijn({ titel: "Hartslag", waarden: r.hs, stapSec: r.stapSec, tijdTekst: tijd, tekst: (v) => Math.round(v) + " bpm",
+      samenvatting: a.gemHartslag ? "gem. " + a.gemHartslag + " · max. " + a.maxHartslag + " bpm" : "" }),
+    Grafiek.lijn({ titel: metTempo ? "Tempo" : "Snelheid", waarden: snelheid, stapSec: r.stapSec, tijdTekst: tijd, isOmgekeerd: metTempo, isBegrensd: metTempo,
+      tekst: (v) => (metTempo ? Analyse.duurTekst(v) + " /km" : v.toFixed(1).replace(".", ",") + " km/u"), samenvatting: "gem. " + Analyse.snelheidTekst(a.gemSnelheidMs, a.sport) }),
+    Grafiek.lijn({ titel: "Hoogte", waarden: r.h, stapSec: r.stapSec, tijdTekst: tijd, tekst: (v) => Math.round(v) + " m",
+      samenvatting: hoogtes.length ? Math.round(Math.min(...hoogtes)) + "–" + Math.round(Math.max(...hoogtes)) + " m" : "" })
+  ].filter(Boolean);
+  return grafieken.length ? kaart("Verloop", ...grafieken, el("p", { class: "note", text: "Raak een grafiek aan om de waarde op dat moment te zien." })) : null;
+}
+async function bewaarMaxHs(veld, meld) {
+  const maxHs = Analyse.geldigeMaxHs(veld.value);
+  if (maxHs === null) return msg(meld, "Vul een hartslag in van " + Analyse.MIN_MAX_HS + " tot " + Analyse.MAX_MAX_HS + ".");
+  try { await bewaarLog(Logboek.metMaxHs(staat.log, maxHs)); } catch (_) { return staat && msg(meld, OPSLAAN_MISLUKT); }
+  wijzigMaxHs = false;
+  tekenFit();
+}
+function zoneKaart(a) {
+  const maxHs = staat.log.maxHs;
+  if (maxHs && !wijzigMaxHs) {
+    const wijzig = el("button", { type: "button", class: "linkish", text: "Maximale hartslag wijzigen (nu " + maxHs + ")" });
+    wijzig.addEventListener("click", () => { wijzigMaxHs = true; tekenFit(); });
+    return kaart("Hartslagzones", Grafiek.zones(Analyse.zoneTijden(a.hsVerdeling, maxHs), Analyse.duurTekst), el("div", { style: "text-align:center" }, wijzig));
+  }
+  const veld = el("input", { type: "text", inputmode: "numeric", maxlength: "3", autocomplete: "off", class: "fill", id: "maxHs", name: "search-maxhs", placeholder: "bijv. 190", "aria-label": "Maximale hartslag" });
+  if (maxHs) veld.value = String(maxHs);
+  const knop = el("button", { type: "button", class: "btn", text: "Bewaar" });
+  const meld = el("div", { class: "msg" });
+  knop.addEventListener("click", () => bewaarMaxHs(veld, meld));
+  return kaart("Hartslagzones", el("p", { class: "muted small", text: "Vul één keer je maximale hartslag in. Die blijft op dit toestel. De zones zijn 50, 60, 70, 80 en 90% daarvan." }),
+    el("div", { class: "rij2" }, veld, knop), meld);
+}
+function rondenKaart(a) {
+  const tabel = el("table", { class: "ronden" }, el("tr", null, ...["Ronde", "Tijd", "Afstand", Analyse.gebruiktTempo(a.sport) ? "Tempo" : "Snelheid", "Hartslag"].map((t) => el("th", { text: t }))));
+  a.ronden.forEach((r, i) => tabel.append(el("tr", null, ...[String(i + 1), Analyse.duurTekst(r.duurSec), Analyse.afstandTekst(r.afstandM),
+    Analyse.snelheidTekst(r.afstandM && r.duurSec ? r.afstandM / r.duurSec : null, a.sport), r.gemHartslag ? String(r.gemHartslag) : "–"].map((t) => el("td", { text: t })))));
+  return kaart("Ronden", el("div", { class: "tablewrap" }, tabel));
+}
+function tekenFit() {
+  const kort = $("#fitKort"), analyse = $("#analyse"), a = invoer.fit;
+  kort.textContent = ""; analyse.textContent = "";
+  $("#btnFit").textContent = a ? "Ander horlogebestand kiezen" : FIT_KNOP;
+  $("#btnFitWis").hidden = !a;
+  if (!a) return kort.append(el("p", { class: "muted small", text: "Optioneel. Exporteer je training als .fit-bestand en voeg hem hier toe. Posities (GPS) worden niet ingelezen." }));
+  const extra = [a.maxHartslag ? "Max. hartslag " + a.maxHartslag : "", a.stijgingM ? "stijging " + a.stijgingM + " m" : ""].filter(Boolean).join(" · ");
+  kort.append(
+    el("p", { class: "note", style: "margin-top:0", text: [Analyse.sportNaam(a.sport), Analyse.datumTekst(a.start)].filter(Boolean).join(" · ") }),
+    el("div", { class: "tegels" },
+      tegel(Analyse.duurTekst(a.duurSec), "Tijd"), tegel(Analyse.afstandTekst(a.afstandM), "Afstand"),
+      tegel(Analyse.snelheidTekst(a.gemSnelheidMs, a.sport), Analyse.gebruiktTempo(a.sport) ? "Tempo" : "Snelheid"), tegel(a.gemHartslag ? String(a.gemHartslag) : "–", "Gem. hartslag")),
+    extra ? el("p", { class: "note", text: extra }) : null);
+  analyse.append(...[a.reeks ? verloopKaart(a) : null, a.hsVerdeling ? zoneKaart(a) : null, a.ronden.length > 1 ? rondenKaart(a) : null].filter(Boolean));
+}
+
+/* ---------- inleveren bij de instructeur ---------- */
+async function bewaarVnr(veld) {
+  const vnr = Overzicht.geldigVnr(veld.value);
+  if (vnr === null) return msg($("#msgInlever"), "Vul je V-nummer in (alleen cijfers).");
+  try { await bewaarLog(Logboek.metVnr(staat.log, vnr)); } catch (_) { return staat && msg($("#msgInlever"), OPSLAAN_MISLUKT); }
+  wijzigVnr = false; msg($("#msgInlever"), "");
+  tekenInlever();
+}
+async function leverIn(knop) {
+  const nu = new Date();
+  const inhoud = Overzicht.maakInhoud(staat.log, staat.code, staat.log.vnr, nu.toISOString());
+  if (!inhoud.regels.length) return msg($("#msgInlever"), "Je hebt nog niets gelogd.");
+  busy(knop, true, "Bezig…");
+  try {
+    const bestand = await Brievenbus.versleutelVoorBus(inhoud, staat.log.bus.publiek, staat.code, inhoud.gemaakt);
+    const merk = Array.from(crypto.getRandomValues(new Uint8Array(2)), (b) => b.toString(16).padStart(2, "0")).join("");
+    const naam = (staat.code ? staat.code + "_" : "") + "Log_" + Basis.datumNu(nu) + "_" + merk + ".mptl";
+    const uitkomst = await Basis.geefBestand(naam, JSON.stringify(bestand));
+    if (uitkomst === "gestopt") msg($("#msgInlever"), "");
+    else msg($("#msgInlever"), (uitkomst === "gedeeld" ? "Gedeeld: " : "Bestand gemaakt: ") + naam + ". Stuur het via Signal naar je instructeur.", "ok");
+  } catch (e) { msg($("#msgInlever"), foutTekst(e)); }
+  finally { busy(knop, false, "Log inleveren"); }
+}
+function tekenInlever() {
+  const host = $("#inlever"), log = staat.log;
+  host.textContent = "";
+  if (!log.bus) return host.append(el("p", { class: "muted small", text: "Om in te leveren heb je het brievenbus-bestand van je groep nodig (…_Brievenbus_….mpt). Importeer het met de knop hieronder." }));
+  if (!log.vnr || wijzigVnr) {
+    const veld = el("input", { type: "text", inputmode: "numeric", maxlength: "10", autocomplete: "off", class: "fill", id: "vnr", name: "search-vnr", placeholder: "V-nummer", "aria-label": "V-nummer" });
+    if (log.vnr) veld.value = log.vnr;
+    const knop = el("button", { type: "button", class: "btn", text: "Bewaar" });
+    knop.addEventListener("click", () => bewaarVnr(veld));
+    const stop = el("button", { type: "button", class: "linkish", id: "btnVnrStop", text: "Annuleren" });
+    stop.addEventListener("click", () => { wijzigVnr = false; msg($("#msgInlever"), ""); tekenInlever(); });
+    return host.append(...[el("p", { class: "muted small", text: "Vul één keer je V-nummer in, zodat je instructeur weet van wie het log is." }), el("div", { class: "rij2" }, veld, knop),
+      log.vnr ? el("div", { style: "text-align:center" }, stop) : null].filter(Boolean));
+  }
+  const knop = el("button", { type: "button", class: "btn", id: "btnInlever", text: "Log inleveren" });
+  knop.addEventListener("click", () => leverIn(knop));
+  const wijzig = el("button", { type: "button", class: "linkish", text: "V-nummer wijzigen" });
+  wijzig.addEventListener("click", () => { wijzigVnr = true; msg($("#msgInlever"), ""); tekenInlever(); });
+  host.append(
+    el("p", { class: "muted small", text: "V-nummer " + log.vnr + " · brievenbus van " + (log.bus.gemaakt || "?") }),
+    el("p", { class: "note", text: "Er gaat mee: per les gedaan of niet, zwaarte en duur. Niets uit je horloge. Alleen je instructeurs kunnen het bestand openen." }),
+    knop, el("div", { style: "text-align:center" }, wijzig));
+}
+
+/* ---------- uitslagen (MPT) ---------- */
+function tekenUitslagen() {
+  const u = staat.uitslagen;
+  $("#uitslagLeeg").hidden = Boolean(u);
+  $("#uitslagZoek").hidden = !u;
+  $("#uitslagLeegTekst").textContent = staat.uitslagMelding
+    || "Nog geen uitslagen op dit toestel. Importeer het uitslagenbestand van je groep (…_MPT_….mpt) met de knop hieronder. Je krijgt het van je instructeur.";
+  $("#uitslagInfo").textContent = u ? "Uitslagen van " + (u.gemaakt || "?") + " · " + u.aantal + (u.aantal === 1 ? " persoon" : " personen") : "";
+  zoekUitslag($("#q").value);
+}
+function zoekUitslag(waarde) {
+  const host = $("#person"), u = staat && staat.uitslagen;
+  msg($("#msgZoek"), "");
+  host.textContent = "";
+  if (!u) return;
+  const key = String(waarde || "").trim();
+  const p = u.zoek(key);
+  if (p) {
+    try { return u.toon(host, p); }
+    catch (_) { host.textContent = ""; return msg($("#msgZoek"), "De uitslag van deze persoon kan niet getoond worden: het uitslagenbestand heeft een onbekende opbouw. Vraag een nieuw bestand."); }
+  }
+  if (key.length >= MIN_ZOEK) msg($("#msgZoek"), "Geen persoon met V-nummer " + key + ".");
+}
+
+/* ---------- afdekscherm en automatisch slot ---------- */
+const slot = Basis.bewaakSlot({ moetDekken: () => staat !== null, opInactief: () => { if (staat) vergrendel("Automatisch vergrendeld."); }, idleMs: IDLE_MS, hiddenMs: HIDDEN_MS });
+const armIdle = slot.arm;
+
+/* ---------- start ---------- */
+function koppelKnoppen() {
+  $("#btnKiesEerste").addEventListener("click", kiesBestand);
+  $("#btnNieuw").addEventListener("click", kiesBestand);
+  $("#fileIn").addEventListener("change", opBestand);
+  $("#btnUnlock").addEventListener("click", ontgrendel);
+  $("#pwUnlock").addEventListener("keydown", (e) => { if (e.key === "Enter") ontgrendel(); });
+  $("#btnNieuwOpen").addEventListener("click", neemNieuwRooster);
+  $("#pwNieuw").addEventListener("keydown", (e) => { if (e.key === "Enter") neemNieuwRooster(); });
+  $("#btnNieuwStop").addEventListener("click", stopNieuwRooster);
+  $("#btnLock").addEventListener("click", () => vergrendel());
+  $("#q").addEventListener("input", (e) => zoekUitslag(e.target.value));
+  $("#q").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); e.target.blur(); } });
+  $("#openLes").addEventListener("click", () => { if (openDoel) lesScherm(openDoel.item, openDoel.k); });
+  for (const [naam, [, knop]] of Object.entries(TABS)) $(knop).addEventListener("click", () => kiesTab(naam));
+  $("#btnWipe").addEventListener("click", wisAlles);
+  $("#btnTerug").addEventListener("click", terugNaarWeek);
+  $("#btnGedaan").addEventListener("click", () => zetInvoer({ status: Logboek.STATUS_GEDAAN }));
+  $("#btnNiet").addEventListener("click", () => zetInvoer({ status: Logboek.STATUS_NIET }));
+  $("#btnOpslaan").addEventListener("click", slaLesOp);
+  $("#btnLogWis").addEventListener("click", wisLes);
+  $("#btnFit").addEventListener("click", kiesFit);
+  $("#fitIn").addEventListener("change", opFit);
+  $("#btnFitWis").addEventListener("click", wisFit);
+  for (let z = Logboek.MIN_ZWAARTE; z <= Logboek.MAX_ZWAARTE; z++) {
+    const b = el("button", { type: "button", text: String(z), "aria-pressed": "false" });
+    b.addEventListener("click", () => zetInvoer({ zwaarte: z }));
+    $("#zwaarte").append(b);
+  }
+}
+async function start() {
+  koppelKnoppen();
+  try { omhulsel = (await opslag.get(KV_ROOSTER)) || null; omhulselUitslag = (await opslag.get(KV_UITSLAGEN)) || null; }
+  catch (_) { show("scrStart"); return msg($("#msgStart"), "Deze browser kan niets bewaren (privémodus?). Open de app vanaf je beginscherm."); }
+  if (omhulsel || omhulselUitslag) slotScherm(); else show("scrStart");
+}
+start();
+
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+  navigator.serviceWorker.ready.then((r) => { if (navigator.onLine && r.active) r.active.postMessage("recache"); }).catch(() => {});
+}
+})();
+</script>
+</body>
+</html>
