@@ -280,7 +280,7 @@ nav.secties button[aria-current="page"]{background:linear-gradient(180deg,var(--
 .gextra{display:flex;gap:12px;flex-wrap:wrap}
 .hits li button{width:100%;text-align:left;background:var(--vlak);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:8px;min-height:44px;font-size:16px;color:var(--ink);cursor:pointer}
 .day{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
-.day:first-of-type{border-top:0}
+.day:first-child{border-top:0}
 .day .dn{flex:0 0 5.6em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650;font-size:14px;color:var(--muted);padding-top:2px}
 #scrGroep nav.secties{margin-top:4px}
 
@@ -296,6 +296,14 @@ p.uitleg{margin:10px 0 0;padding-top:10px;border-top:1px solid var(--line);font-
 details.uitleg{margin-top:6px;font-size:14px}
 details.uitleg summary{cursor:pointer;color:var(--lijn);font-weight:650;min-height:32px;display:flex;align-items:center}
 details.uitleg p{margin:4px 0 2px;line-height:1.5}
+
+/* rooster (instructeur): les aantikken voor alle info */
+button.day{width:100%;background:none;border:0;border-top:1px solid var(--line);color:var(--ink);font:inherit;text-align:left;cursor:pointer;align-items:stretch}
+.day .pijl{flex:0 0 auto;align-self:center;color:var(--muted);font-size:22px;padding-left:4px}
+.lesinfo{display:grid;gap:8px;margin-top:12px}
+.lesinfo div{display:flex;justify-content:space-between;gap:12px;padding:8px 12px;border-radius:12px;background:var(--vlak)}
+.lesinfo span{color:var(--muted);font-size:14px}
+.lesinfo b{font-size:15px;font-weight:650;text-align:right;overflow-wrap:break-word;min-width:0}
 </style>
 </head>
 <body class="app">

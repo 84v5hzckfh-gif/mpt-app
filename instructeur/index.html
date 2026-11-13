@@ -281,7 +281,7 @@ nav.secties button[aria-current="page"]{background:linear-gradient(180deg,var(--
 .gextra{display:flex;gap:12px;flex-wrap:wrap}
 .hits li button{width:100%;text-align:left;background:var(--vlak);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:8px;min-height:44px;font-size:16px;color:var(--ink);cursor:pointer}
 .day{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
-.day:first-of-type{border-top:0}
+.day:first-child{border-top:0}
 .day .dn{flex:0 0 5.6em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650;font-size:14px;color:var(--muted);padding-top:2px}
 #scrGroep nav.secties{margin-top:4px}
 
@@ -297,6 +297,14 @@ p.uitleg{margin:10px 0 0;padding-top:10px;border-top:1px solid var(--line);font-
 details.uitleg{margin-top:6px;font-size:14px}
 details.uitleg summary{cursor:pointer;color:var(--lijn);font-weight:650;min-height:32px;display:flex;align-items:center}
 details.uitleg p{margin:4px 0 2px;line-height:1.5}
+
+/* rooster (instructeur): les aantikken voor alle info */
+button.day{width:100%;background:none;border:0;border-top:1px solid var(--line);color:var(--ink);font:inherit;text-align:left;cursor:pointer;align-items:stretch}
+.day .pijl{flex:0 0 auto;align-self:center;color:var(--muted);font-size:22px;padding-left:4px}
+.lesinfo{display:grid;gap:8px;margin-top:12px}
+.lesinfo div{display:flex;justify-content:space-between;gap:12px;padding:8px 12px;border-radius:12px;background:var(--vlak)}
+.lesinfo span{color:var(--muted);font-size:14px}
+.lesinfo b{font-size:15px;font-weight:650;text-align:right;overflow-wrap:break-word;min-width:0}
 main{max-width:760px}
 .chips{flex-wrap:wrap;overflow-x:visible}
 table.overzicht{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:15px}
@@ -1938,7 +1946,7 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
   let open = new Map();  // code -> { naam, naamMpt, naamRooster, naamConflict, uitslagen, rooster, half } alleen in geheugen
   let huidig = null;     // code van de groep die bekeken wordt
   let tab = "persoon";
-  let rState = { meso: 0, wk: 0 };
+  let rState = { meso: 0, wk: 0, les: null };   // les: { nr, dag } als één les open staat
   let zoekBezig = false;
   let slotTeller = 0;    // telt elke vergrendeling: wat daarna nog binnenkomt van een open-poging, wordt weggegooid
   let opslagFout = false;
@@ -2159,7 +2167,7 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
   /* ---------- één groep ---------- */
   function naarGroep(code, vnr) {
     const e = open.get(code); if (!e) return;
-    huidig = code; rState = { meso: 0, wk: 0 };
+    huidig = code; rState = { meso: 0, wk: 0, les: null };
     tab = e.uitslagen ? "persoon" : "rooster";
     $("#gTabs").hidden = !(e.uitslagen && e.rooster);
     const info = [];
@@ -2181,7 +2189,7 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     }
     $("#gViewPersoon").hidden = t !== "persoon";
     $("#gViewRooster").hidden = t !== "rooster";
-    if (t === "rooster") tekenRooster();
+    if (t === "rooster") { rState = { ...rState, les: null }; tekenRooster(); }
   }
   function zoekInGroep(v) {
     const host = $("#gPerson"), e = open.get(huidig);
@@ -2201,17 +2209,18 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     if (!rooster) return;
     const ms = Array.isArray(rooster.mesos) ? rooster.mesos.filter((x) => x && Array.isArray(x.weken) && x.weken.length) : [];
     if (!ms.length) return host.append(kaart("Rooster", el("p", { class: "empty", text: "Dit rooster bevat geen weken." })));
-    if (rState.meso >= ms.length) rState = { meso: 0, wk: 0 };
+    if (rState.meso >= ms.length) rState = { meso: 0, wk: 0, les: null };
     const m = ms[rState.meso];
-    if (rState.wk >= m.weken.length) rState = { ...rState, wk: 0 };
+    if (rState.wk >= m.weken.length) rState = { ...rState, wk: 0, les: null };
+    if (rState.les) return tekenLes(host, rooster, m, m.weken[rState.wk]);
     const sel = el("select", { class: "fill", name: "search-gmeso", "aria-label": "Meso" });
     ms.forEach((x, i) => sel.append(el("option", { value: String(i), text: String(x.naam) })));
     sel.value = String(rState.meso);
-    sel.addEventListener("change", () => { rState = { meso: Number(sel.value), wk: 0 }; tekenRooster(); });
+    sel.addEventListener("change", () => { rState = { meso: Number(sel.value), wk: 0, les: null }; tekenRooster(); });
     const chips = el("div", { class: "chips", role: "group", "aria-label": "Week" });
     m.weken.forEach((w, i) => {
       const b = el("button", { type: "button", text: "Wk " + (w && w.wk), "aria-pressed": String(i === rState.wk) });
-      b.addEventListener("click", () => { rState = { ...rState, wk: i }; tekenRooster(); });
+      b.addEventListener("click", () => { rState = { ...rState, wk: i, les: null }; tekenRooster(); });
       chips.append(b);
     });
     const een = ms.length === 1;
@@ -2232,12 +2241,34 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
           const meta = [L.zone, [L.km, L.opdr].filter(Boolean).join(" · ")].filter(Boolean).join("  |  ");
           blok.append(el("div", { class: "nr", text: nr + "  " + (L.d || "") }), el("b", { text: L.les || L.d || "" }));
           if (meta) blok.append(el("div", { class: "meta", text: meta }));
-          if (L.uitleg) blok.append(el("details", { class: "uitleg" }, el("summary", { text: "Meer info" }), el("p", { text: String(L.uitleg).slice(0, 2000) })));
         }
-        lijst.append(el("div", { class: "day" }, el("div", { class: "dn", text: String(dn) }), blok));
+        if (!L) return lijst.append(el("div", { class: "day" }, el("div", { class: "dn", text: String(dn) }), blok));
+        // Een les aantikken: alleen die les, met alle info.
+        const rij = el("button", { type: "button", class: "day", "aria-label": dn + ": " + (L.les || L.d || "les " + nr) + ", meer info" },
+          el("div", { class: "dn", text: String(dn) }), blok, el("span", { class: "pijl", "aria-hidden": "true", text: "›" }));
+        rij.addEventListener("click", () => { rState = { ...rState, les: { nr, dag: String(dn) } }; tekenRooster(); scrollTo(0, 0); });
+        lijst.append(rij);
       });
     }
     host.append(kaart((m.titel || m.naam) + " · week " + (w ? w.wk : "-"), lijst));
+  }
+
+  // Eén les met alle info uit het FTS-overzicht.
+  function tekenLes(host, rooster, m, w) {
+    const { nr, dag } = rState.les, L = (rooster.lessen || {})[nr] || {};
+    const terug = el("button", { type: "button", class: "back", id: "btnLesTerug", text: "‹ Week " + (w ? w.wk : "") });
+    terug.addEventListener("click", () => { rState = { ...rState, les: null }; tekenRooster(); });
+    const rijen = el("div", { class: "lesinfo" });
+    for (const [kop, waarde] of [["Discipline", L.d], ["Zone / intensiteit", L.zone], ["Km totaal", L.km], ["Opdracht", L.opdr]]) {
+      if (waarde) rijen.append(el("div", null, el("span", { text: kop }), el("b", { text: String(waarde) })));
+    }
+    const kop = el("div", { class: "card leskop", style: "border-left-color:" + discKleur(L.d) },
+      el("div", { class: "nr", text: dag + " · week " + (w ? w.wk : "-") + " · " + String(m.titel || m.naam) }),
+      el("b", { text: String(L.les || L.d || "Les " + nr) }),
+      el("div", { class: "muted small", text: "Les " + nr }),
+      rijen,
+      L.uitleg ? el("p", { class: "uitleg", text: String(L.uitleg).slice(0, 2000) }) : el("p", { class: "note", text: "Geen toelichting bij deze les. Vul die in het FTS-overzicht in (tabblad Lessen, kolom Toelichting) en maak het rooster opnieuw." }));
+    host.append(terug, kop);
   }
 
   /* ---------- slot ---------- */
@@ -2254,7 +2285,7 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
   /** Alle groepen dicht en alles uit de pagina; de versleutelde bestanden blijven bewaard. */
   function vergrendel() {
     slotTeller++;
-    open = new Map(); huidig = null; rState = { meso: 0, wk: 0 };
+    open = new Map(); huidig = null; rState = { meso: 0, wk: 0, les: null };
     sluitGroepWeergave(); wisVelden();
   }
 
