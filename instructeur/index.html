@@ -305,6 +305,12 @@ button.day{width:100%;background:none;border:0;border-top:1px solid var(--line);
 .lesinfo div{display:flex;justify-content:space-between;gap:12px;padding:8px 12px;border-radius:12px;background:var(--vlak)}
 .lesinfo span{color:var(--muted);font-size:14px}
 .lesinfo b{font-size:15px;font-weight:650;text-align:right;overflow-wrap:break-word;min-width:0}
+
+/* MPT-uitslag naast de belasting (Logs, scherm van één persoon) */
+.mptkaart{display:grid;gap:8px}
+.mptrij{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 12px;border-radius:12px;background:var(--vlak)}
+.mptrij span:first-child{font-weight:650}
+.mptrij .badge{display:inline-block;padding:6px 12px;border-radius:999px;font-size:15px;font-weight:700;background:var(--card);white-space:nowrap}
 main{max-width:760px}
 .chips{flex-wrap:wrap;overflow-x:visible}
 table.overzicht{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:15px}
@@ -1913,11 +1919,17 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
       aantal: index.size,
       zoek: (vnr) => { const key = String(vnr == null ? "" : vnr).trim(); return (key && index.get(key)) || null; },
       weergave: (p) => kiesWeergave(data, hist, p),
-      toon: (host, p) => toonPersoon(data, hist, host, p)
+      toon: (host, p) => toonPersoon(data, hist, host, p),
+      // Kort: AMF-totaal en FPM-eindresultaat zoals de volledige weergave ze toont (met terugval op de historie).
+      samenvatting: (p) => {
+        const w = kiesWeergave(data, hist, p), t = (w.toon && w.toon.t) || {};
+        return { amf: String(t.D12 || ""), fpm: String(t.D23 || ""), terugval: w.terugval,
+          testdatum: w.terugval ? testDatum(w.rows[w.rows.length - 1]) : "", deels: w.namen };
+      }
     });
   }
 
-  const api = Object.freeze({ UitslagFout, controleer, maak });
+  const api = Object.freeze({ UitslagFout, controleer, maak, badge });
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Uitslagen = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);
@@ -2308,13 +2320,25 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     try { groepen = (await opslag.get(KV_GROEPEN)) || []; } catch (_) { groepen = []; opslagFout = true; }   // niet stil: lijstScherm meldt het
   }
 
-  root.Groepen = Object.freeze({ koppel, lijstScherm, vergrendel, heeftOpen });
+  /** Voor Logs: de MPT-uitslag van één V-nummer uit de geopende groep met deze code. */
+  function uitslagVan(code, vnr) {
+    const c = String(code || "").toUpperCase();
+    if (!groepen.some((g) => g.code === c && g.mpt)) return { status: "geen" };
+    const e = open.get(c);
+    if (!e || !e.uitslagen) return { status: "dicht" };
+    const p = e.uitslagen.zoek(vnr);
+    if (!p) return { status: "onbekend", gemaakt: e.uitslagen.gemaakt };
+    try { return { status: "ok", gemaakt: e.uitslagen.gemaakt, ...e.uitslagen.samenvatting(p) }; }
+    catch (_) { return { status: "onleesbaar" }; }
+  }
+
+  root.Groepen = Object.freeze({ koppel, lijstScherm, vergrendel, heeftOpen, uitslagVan });
 })(globalThis);
 
 "use strict";
 /* COMBATREADY Instructeur - schermen. Brievenbus maken, logbestanden inlezen, overzicht per week en per persoon. */
 (() => {
-const { Basis, Kluis, Logboek, Brievenbus, Overzicht, Grafiek, Maken, Groepen } = globalThis;
+const { Basis, Kluis, Logboek, Brievenbus, Overzicht, Grafiek, Maken, Groepen, Uitslagen } = globalThis;
 const { $, el, msg, busy } = Basis;
 const IDLE_MS = 10 * 60 * 1000;
 const HIDDEN_MS = 2 * 60 * 1000;
@@ -2648,6 +2672,22 @@ function overzichtScherm() {
 }
 
 /* ---------- persoon ---------- */
+// MPT-uitslag naast de belasting: uit de groep met dezelfde code, als die in Groepen open staat.
+function mptKaart(vnr) {
+  const u = Groepen.uitslagVan(open.code, vnr);
+  const UITLEG = {
+    geen: "Er staat geen MPT-bestand van " + codeLabel(open.code) + " in Groepen. Importeer het daar om de uitslag hier te zien.",
+    dicht: "Open " + codeLabel(open.code) + " in Groepen (met het groepswachtwoord) om de MPT-uitslag hier te zien.",
+    onbekend: "Dit V-nummer staat niet in het MPT-bestand van " + (u.gemaakt || "?") + ".",
+    onleesbaar: "De uitslag van dit V-nummer kan niet getoond worden: het MPT-bestand heeft een onbekende opbouw."
+  };
+  if (u.status !== "ok") return kaart("MPT-uitslag", el("p", { class: "muted small", id: "mptUitleg", text: UITLEG[u.status] }));
+  const rij = (naam, oordeel) => el("div", { class: "mptrij" }, el("span", { text: naam }), Uitslagen.badge(oordeel || "–", true));
+  const bron = u.terugval ? "Geen nieuwe test: laatste uitslag uit de historie (test van " + u.testdatum + ")."
+    : "Uit het MPT-bestand van " + (u.gemaakt || "?") + "." + (u.deels.length ? " Deels uit een eerdere test: " + u.deels.join(", ") + "." : "");
+  return kaart("MPT-uitslag", el("div", { class: "mptkaart", id: "mptUitslag" }, rij("AMF totaal", u.amf), rij("FPM eindresultaat", u.fpm)),
+    el("p", { class: "note", text: bron }));
+}
 function persoonScherm(vnr, k) {
   const inhoud = open.inhouden.find((i) => i.vnr === vnr);
   const host = $("#persoon"); host.textContent = "";
@@ -2666,6 +2706,7 @@ function persoonScherm(vnr, k) {
   wis.addEventListener("click", () => wisPersoon(vnr));
   host.append(
     kaart("V-nummer " + vnr, el("p", { class: "muted small", text: "Ingeleverd " + datumKort(inhoud.gemaakt) + " · " + k.meso.meso })),
+    mptKaart(vnr),
     k.meso.weken.length > 1 ? kaart("Belasting per week", Grafiek.trend(trend, k.wk, (wk) => { open = { ...open, keuze: { meso: k.meso.meso, wk } }; persoonScherm(vnr, { meso: k.meso, wk }); })) : null,
     kaart("Week " + k.wk, lijst),
     el("div", { style: "text-align:center" }, wis));

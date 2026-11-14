@@ -304,6 +304,12 @@ button.day{width:100%;background:none;border:0;border-top:1px solid var(--line);
 .lesinfo div{display:flex;justify-content:space-between;gap:12px;padding:8px 12px;border-radius:12px;background:var(--vlak)}
 .lesinfo span{color:var(--muted);font-size:14px}
 .lesinfo b{font-size:15px;font-weight:650;text-align:right;overflow-wrap:break-word;min-width:0}
+
+/* MPT-uitslag naast de belasting (Logs, scherm van één persoon) */
+.mptkaart{display:grid;gap:8px}
+.mptrij{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 12px;border-radius:12px;background:var(--vlak)}
+.mptrij span:first-child{font-weight:650}
+.mptrij .badge{display:inline-block;padding:6px 12px;border-radius:999px;font-size:15px;font-weight:700;background:var(--card);white-space:nowrap}
 </style>
 </head>
 <body class="app">
@@ -2092,11 +2098,17 @@ button.day{width:100%;background:none;border:0;border-top:1px solid var(--line);
       aantal: index.size,
       zoek: (vnr) => { const key = String(vnr == null ? "" : vnr).trim(); return (key && index.get(key)) || null; },
       weergave: (p) => kiesWeergave(data, hist, p),
-      toon: (host, p) => toonPersoon(data, hist, host, p)
+      toon: (host, p) => toonPersoon(data, hist, host, p),
+      // Kort: AMF-totaal en FPM-eindresultaat zoals de volledige weergave ze toont (met terugval op de historie).
+      samenvatting: (p) => {
+        const w = kiesWeergave(data, hist, p), t = (w.toon && w.toon.t) || {};
+        return { amf: String(t.D12 || ""), fpm: String(t.D23 || ""), terugval: w.terugval,
+          testdatum: w.terugval ? testDatum(w.rows[w.rows.length - 1]) : "", deels: w.namen };
+      }
     });
   }
 
-  const api = Object.freeze({ UitslagFout, controleer, maak });
+  const api = Object.freeze({ UitslagFout, controleer, maak, badge });
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Uitslagen = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);
