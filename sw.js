@@ -1,7 +1,7 @@
-// MPT (eigen repo) - service worker voor de marinier-pagina en de instructeurs-pagina: beide werken offline.
-// Nieuwe versie uitrollen? Verhoog VERSIE en upload opnieuw.
-const VERSIE = "mptapp-v1";
-const BESTANDEN = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./instructeur/", "./instructeur/index.html", "./instructeur/manifest.webmanifest"];
+// COMBATREADY (eigen repo) - service worker voor de marinier-pagina, de instructeurs-pagina en het dashboard (pc): alle drie werken offline.
+// VERSIE verhogen als de bestandenlijst hieronder verandert; voor alleen nieuwe inhoud hoeft het niet (de update komt bij de 2e keer openen).
+const VERSIE = "mptapp-v2";
+const BESTANDEN = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./instructeur/", "./instructeur/index.html", "./instructeur/manifest.webmanifest", "./dashboard/", "./dashboard/index.html"];
 
 self.addEventListener("install", e => {
   // altijd vers ophalen bij installeren (niet uit de browsercache)

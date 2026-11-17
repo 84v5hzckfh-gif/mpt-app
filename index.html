@@ -283,6 +283,9 @@ nav.secties button[aria-current="page"]{background:linear-gradient(180deg,var(--
 .day:first-child{border-top:0}
 .day .dn{flex:0 0 5.6em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650;font-size:14px;color:var(--muted);padding-top:2px}
 #scrGroep nav.secties{margin-top:4px}
+/* Smal scherm: vier onderdelen in twee rijen van twee, zodat geen woord breekt. */
+@media (max-width:360px){nav.secties{flex-wrap:wrap;border-radius:22px}nav.secties button{flex:1 1 40%}}
+@media (max-width:300px){nav.secties button{flex-basis:100%}}
 
 /* merk: naam en slogan op start- en slotscherm en op het afdekscherm */
 .merk{text-align:center;margin:8px 0 18px}
@@ -310,6 +313,35 @@ button.day{width:100%;background:none;border:0;border-top:1px solid var(--line);
 .mptrij{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 12px;border-radius:12px;background:var(--vlak)}
 .mptrij span:first-child{font-weight:650}
 .mptrij .badge{display:inline-block;padding:6px 12px;border-radius:999px;font-size:15px;font-weight:700;background:var(--card);white-space:nowrap}
+
+/* Les (instructeur, tablet): les kiezen, onderdelen, aanwezigen, overzicht per V-nummer */
+.hits.leskeuze{margin-top:10px}
+.hits.leskeuze li button{display:flex;flex-direction:column;gap:2px}
+.hits.leskeuze small{color:var(--muted);font-size:13px}
+.lesregel{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;padding:8px 0;border-top:1px solid var(--line)}
+.lesregel:first-of-type{border-top:0}
+.lesveld{flex:1 1 130px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.lesveld span{font-size:13px;color:var(--muted);font-weight:600}
+button.lesweg{flex:0 0 44px;height:44px;border-radius:999px;border:1px solid var(--field-line);background:none;color:var(--muted);font-size:20px;cursor:pointer}
+.chips.lesaanwezig{flex-wrap:wrap;overflow-x:visible}
+.chips.lesaanwezig button{font-variant-numeric:tabular-nums}
+.chips.lesaanwezig button.onbekend{border-style:dashed;color:var(--muted)}
+.leslijst li{display:flex;flex-wrap:wrap;align-items:center}
+.leslijst li button.g{flex:1 1 200px}
+.leslijst li button.g:disabled{cursor:default;opacity:1}
+.leslijst .linkish{flex:0 0 auto}
+table.lestabel td,table.lestabel th{padding:9px 8px}
+table.lestabel tbody tr:nth-child(even) td{background:var(--vlak)}
+.lesonbekend{color:var(--muted);font-size:12px}
+/* Les: groep aanvinken (aangevinkt = aanwezig) */
+.lesgroepknoppen{display:flex;gap:8px;flex-wrap:wrap}
+.lesgroepknoppen button.btn{flex:1 1 140px;margin-top:0;min-height:44px;padding:10px 14px;font-size:15px}
+.lesgroep{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px;margin-top:12px}
+button.lesvink{display:flex;align-items:center;gap:10px;min-height:52px;padding:8px 12px;border-radius:14px;border:1px solid var(--field-line);background:var(--field);color:var(--ink);font-size:16px;font-weight:650;font-variant-numeric:tabular-nums;cursor:pointer;text-align:left}
+button.lesvink .vink{flex:0 0 24px;height:24px;border-radius:7px;border:2px solid var(--field-line);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;line-height:1}
+button.lesvink[aria-pressed="true"]{border-color:var(--lijn);background:var(--vlak)}
+button.lesvink[aria-pressed="true"] .vink{background:linear-gradient(180deg,var(--accent),var(--accent2));border-color:transparent;color:var(--op)}
+.card:has(> .lesgroep){scroll-margin-top:calc(96px + env(safe-area-inset-top))}   /* na Groep: kaart niet onder de kopbalk */
 </style>
 </head>
 <body class="app">
@@ -553,7 +585,13 @@ button.day{width:100%;background:none;border:0;border-top:1px solid var(--line);
   const datumNu = (d) => d.getFullYear() + "-" + tweeCijfers(d.getMonth() + 1) + "-" + tweeCijfers(d.getDate());
   const datumTijdNu = (d) => tweeCijfers(d.getDate()) + "-" + tweeCijfers(d.getMonth() + 1) + "-" + d.getFullYear() + " " + tweeCijfers(d.getHours()) + ":" + tweeCijfers(d.getMinutes());
 
-  root.Basis = Object.freeze({ $, el, msg, busy, maakOpslag, bewaakSlot, leesJson, geefBestand, datumNu, datumTijdNu });
+  /** "dd-mm-jjjj uu:mm" (zoals in de bestanden) als sorteerbare tekst, of null. */
+  function datumVolgorde(gemaakt) {
+    const m = /^(\d\d)-(\d\d)-(\d{4})(?: (\d\d):(\d\d))?/.exec(String(gemaakt || ""));
+    return m ? m[3] + m[2] + m[1] + (m[4] || "00") + (m[5] || "00") : null;
+  }
+
+  root.Basis = Object.freeze({ $, el, msg, busy, maakOpslag, bewaakSlot, leesJson, geefBestand, datumNu, datumTijdNu, datumVolgorde });
 })(typeof globalThis !== "undefined" ? globalThis : this);
 
 "use strict";
@@ -1767,7 +1805,7 @@ button.day{width:100%;background:none;border:0;border-top:1px solid var(--line);
     return weken.map((wk) => ({ wk, ...totaalVan(regelsVan(inhoud, meso, wk)) }));
   }
 
-  const api = Object.freeze({ OverzichtFout, FORMAAT_INHOUD, geldigVnr, maakInhoud, controleerInhoud, nieuwstePerPersoon, mesoWeken, weekOverzicht, weekRegels, controleerPlan, geplandeLessen, STATUS_OPEN, regelsVan, persoonTrend, totaalVan });
+  const api = Object.freeze({ OverzichtFout, FORMAAT_INHOUD, geldigVnr, maakInhoud, controleerInhoud, nieuwstePerPersoon, mesoWeken, weekOverzicht, weekRegels, controleerPlan, geplandeLessen, STATUS_OPEN, STATUS_GEDAAN, regelsVan, persoonTrend, totaalVan });
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Overzicht = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);
@@ -2089,6 +2127,13 @@ button.day{width:100%;background:none;border:0;border-top:1px solid var(--line);
     }
   }
 
+  /** De krachtoefeningen (blad MPT_PERSOON regels 27-33) met een naam. */
+  function krachtNamen(data) {
+    const uit = [];
+    for (let r = 27; r <= 33; r++) { const naam = String((data.labels && data.labels["A" + r]) || "").trim(); if (naam) uit.push({ r, naam }); }
+    return uit;
+  }
+
   /** Eén geopend uitslagenbestand. `zoek` geeft de persoon of null; `toon` tekent hem in `host`. */
   function maak(data) {
     controleer(data);
@@ -2097,6 +2142,20 @@ button.day{width:100%;background:none;border:0;border-top:1px solid var(--line);
       gemaakt: String(data.gemaakt || ""),
       aantal: index.size,
       zoek: (vnr) => { const key = String(vnr == null ? "" : vnr).trim(); return (key && index.get(key)) || null; },
+      // Voor de les (tablet): de krachtoefeningen uit het blad, de pace-factoren en standaardwaarden.
+      oefeningen: () => krachtNamen(data),
+      // V-nummers van de groep (alleen wie in het groepsbestand staat, niet wie alleen in de historie voorkomt), gesorteerd.
+      leden: () => [...new Set((Array.isArray(data.personen) ? data.personen : []).filter((p) => p && p.v != null && String(p.v).trim()).map((p) => String(p.v).trim()))]
+        .sort((a, b) => a.localeCompare(b, "nl", { numeric: true })),
+      bepakking: Array.isArray(data.bepakking) ? data.bepakking : [],
+      invoer: data.invoer && typeof data.invoer === "object" ? data.invoer : {},
+      // 1000m-tijd en 1RM per oefening zoals de volledige weergave ze gebruikt (met terugval op de historie).
+      lesWaarden: (p) => {
+        const n = (kiesWeergave(data, hist, p).toon || {}).n || {};
+        // afstanden: welke afstand in de tabel Trainingsafstanden met het 5 km-equivalent (B72) rekent.
+        const afstanden = (Array.isArray(data.afstanden) ? data.afstanden : []).filter((x) => x && typeof x.m === "number").map((x) => ({ m: x.m, basis: x.basis === "B72" ? "B72" : "B50" }));
+        return { b50: num(n.B50), b72: num(n.B72), afstanden, kracht: krachtNamen(data).map((k) => ({ naam: k.naam, rm: num(n["D" + k.r]) })) };
+      },
       weergave: (p) => kiesWeergave(data, hist, p),
       toon: (host, p) => toonPersoon(data, hist, host, p),
       // Kort: AMF-totaal en FPM-eindresultaat zoals de volledige weergave ze toont (met terugval op de historie).
@@ -2169,10 +2228,7 @@ const OPSLAAN_MISLUKT = "Opslaan op dit toestel is mislukt. Je wijziging is niet
 const ANDER_VENSTER = "Je log is in een ander venster gewijzigd. Open de app opnieuw; je laatste wijziging hier is niet bewaard.";
 const codeLabel = (code) => (code ? "Groep " + code : "Zonder groepscode");
 // "11-11-2026 20:00" -> "202611112000", om twee roosters op datum te vergelijken; null als de datum niet te lezen is.
-function volgorde(gemaakt) {
-  const m = /^(\d\d)-(\d\d)-(\d{4})(?: (\d\d):(\d\d))?/.exec(String(gemaakt || ""));
-  return m ? m[3] + m[2] + m[1] + (m[4] || "00") + (m[5] || "00") : null;
-}
+const volgorde = Basis.datumVolgorde;
 
 /* ---------- bestand kiezen ---------- */
 async function leesBestand(file) {

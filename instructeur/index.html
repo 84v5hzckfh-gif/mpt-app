@@ -284,6 +284,9 @@ nav.secties button[aria-current="page"]{background:linear-gradient(180deg,var(--
 .day:first-child{border-top:0}
 .day .dn{flex:0 0 5.6em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650;font-size:14px;color:var(--muted);padding-top:2px}
 #scrGroep nav.secties{margin-top:4px}
+/* Smal scherm: vier onderdelen in twee rijen van twee, zodat geen woord breekt. */
+@media (max-width:360px){nav.secties{flex-wrap:wrap;border-radius:22px}nav.secties button{flex:1 1 40%}}
+@media (max-width:300px){nav.secties button{flex-basis:100%}}
 
 /* merk: naam en slogan op start- en slotscherm en op het afdekscherm */
 .merk{text-align:center;margin:8px 0 18px}
@@ -311,6 +314,35 @@ button.day{width:100%;background:none;border:0;border-top:1px solid var(--line);
 .mptrij{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 12px;border-radius:12px;background:var(--vlak)}
 .mptrij span:first-child{font-weight:650}
 .mptrij .badge{display:inline-block;padding:6px 12px;border-radius:999px;font-size:15px;font-weight:700;background:var(--card);white-space:nowrap}
+
+/* Les (instructeur, tablet): les kiezen, onderdelen, aanwezigen, overzicht per V-nummer */
+.hits.leskeuze{margin-top:10px}
+.hits.leskeuze li button{display:flex;flex-direction:column;gap:2px}
+.hits.leskeuze small{color:var(--muted);font-size:13px}
+.lesregel{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;padding:8px 0;border-top:1px solid var(--line)}
+.lesregel:first-of-type{border-top:0}
+.lesveld{flex:1 1 130px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.lesveld span{font-size:13px;color:var(--muted);font-weight:600}
+button.lesweg{flex:0 0 44px;height:44px;border-radius:999px;border:1px solid var(--field-line);background:none;color:var(--muted);font-size:20px;cursor:pointer}
+.chips.lesaanwezig{flex-wrap:wrap;overflow-x:visible}
+.chips.lesaanwezig button{font-variant-numeric:tabular-nums}
+.chips.lesaanwezig button.onbekend{border-style:dashed;color:var(--muted)}
+.leslijst li{display:flex;flex-wrap:wrap;align-items:center}
+.leslijst li button.g{flex:1 1 200px}
+.leslijst li button.g:disabled{cursor:default;opacity:1}
+.leslijst .linkish{flex:0 0 auto}
+table.lestabel td,table.lestabel th{padding:9px 8px}
+table.lestabel tbody tr:nth-child(even) td{background:var(--vlak)}
+.lesonbekend{color:var(--muted);font-size:12px}
+/* Les: groep aanvinken (aangevinkt = aanwezig) */
+.lesgroepknoppen{display:flex;gap:8px;flex-wrap:wrap}
+.lesgroepknoppen button.btn{flex:1 1 140px;margin-top:0;min-height:44px;padding:10px 14px;font-size:15px}
+.lesgroep{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px;margin-top:12px}
+button.lesvink{display:flex;align-items:center;gap:10px;min-height:52px;padding:8px 12px;border-radius:14px;border:1px solid var(--field-line);background:var(--field);color:var(--ink);font-size:16px;font-weight:650;font-variant-numeric:tabular-nums;cursor:pointer;text-align:left}
+button.lesvink .vink{flex:0 0 24px;height:24px;border-radius:7px;border:2px solid var(--field-line);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;line-height:1}
+button.lesvink[aria-pressed="true"]{border-color:var(--lijn);background:var(--vlak)}
+button.lesvink[aria-pressed="true"] .vink{background:linear-gradient(180deg,var(--accent),var(--accent2));border-color:transparent;color:var(--op)}
+.card:has(> .lesgroep){scroll-margin-top:calc(96px + env(safe-area-inset-top))}   /* na Groep: kaart niet onder de kopbalk */
 main{max-width:760px}
 .chips{flex-wrap:wrap;overflow-x:visible}
 table.overzicht{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:15px}
@@ -321,6 +353,8 @@ table.overzicht tbody tr{cursor:pointer}
 table.overzicht td small{display:block;color:var(--muted);font-size:12px;white-space:normal}
 @media (max-width:480px){table.overzicht{font-size:14px}table.overzicht th,table.overzicht td{padding:9px 4px}}
 table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weight:650;color:var(--ink);text-decoration:underline;cursor:pointer}
+.dashlink{margin:28px 0 8px;text-align:center}
+.dashlink a{color:var(--ink);font-weight:650;font-size:15px;display:block;width:max-content;margin:0 auto;padding:10px 8px 4px}
 </style>
 </head>
 <body>
@@ -460,6 +494,7 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
   <nav class="secties" id="gTabs" aria-label="Onderdelen van de groep" hidden>
     <button type="button" id="gTabPersoon">Persoon</button>
     <button type="button" id="gTabRooster">Rooster</button>
+    <button type="button" id="gTabLes">Les</button>
   </nav>
   <div id="gViewPersoon">
     <div class="card zoek">
@@ -470,10 +505,12 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     <div id="gPerson" class="uitslag"></div>
   </div>
   <div id="gViewRooster" hidden></div>
+  <div id="gViewLes" hidden></div>
   <div class="msg" id="msgGInfo"></div>
   <p class="foot" id="gDataInfo"></p>
   <div style="text-align:center"><button class="linkish" type="button" id="btnGDel">Deze groep van dit toestel verwijderen</button></div>
 </section>
+
 
 <!-- BESTANDEN MAKEN (uit Beheer van de instructie-app) -->
 <section id="scrBestanden" class="screen" hidden>
@@ -496,6 +533,8 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     <p class="note">Gebruik voor het MPT-bestand en het rooster van één groep <b>dezelfde code, naam en hetzelfde wachtwoord</b>. Houd per groep altijd dezelfde code aan. Verwijder daarna het onversleutelde .json-bestand en deel het wachtwoord nooit in hetzelfde bericht als het bestand.</p>
   </div>
 </section>
+
+<p class="note dashlink"><a href="../dashboard/">Dashboard (pc)</a>Alle groepen naast elkaar, voor achter de pc.</p>
 
 <div id="cover" hidden><div class="merk"><b>COMBATREADY</b><span>Instructeur</span></div></div>
 <input type="file" id="sleutelIn" hidden>
@@ -610,7 +649,13 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
   const datumNu = (d) => d.getFullYear() + "-" + tweeCijfers(d.getMonth() + 1) + "-" + tweeCijfers(d.getDate());
   const datumTijdNu = (d) => tweeCijfers(d.getDate()) + "-" + tweeCijfers(d.getMonth() + 1) + "-" + d.getFullYear() + " " + tweeCijfers(d.getHours()) + ":" + tweeCijfers(d.getMinutes());
 
-  root.Basis = Object.freeze({ $, el, msg, busy, maakOpslag, bewaakSlot, leesJson, geefBestand, datumNu, datumTijdNu });
+  /** "dd-mm-jjjj uu:mm" (zoals in de bestanden) als sorteerbare tekst, of null. */
+  function datumVolgorde(gemaakt) {
+    const m = /^(\d\d)-(\d\d)-(\d{4})(?: (\d\d):(\d\d))?/.exec(String(gemaakt || ""));
+    return m ? m[3] + m[2] + m[1] + (m[4] || "00") + (m[5] || "00") : null;
+  }
+
+  root.Basis = Object.freeze({ $, el, msg, busy, maakOpslag, bewaakSlot, leesJson, geefBestand, datumNu, datumTijdNu, datumVolgorde });
 })(typeof globalThis !== "undefined" ? globalThis : this);
 
 "use strict";
@@ -1362,7 +1407,7 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     return weken.map((wk) => ({ wk, ...totaalVan(regelsVan(inhoud, meso, wk)) }));
   }
 
-  const api = Object.freeze({ OverzichtFout, FORMAAT_INHOUD, geldigVnr, maakInhoud, controleerInhoud, nieuwstePerPersoon, mesoWeken, weekOverzicht, weekRegels, controleerPlan, geplandeLessen, STATUS_OPEN, regelsVan, persoonTrend, totaalVan });
+  const api = Object.freeze({ OverzichtFout, FORMAAT_INHOUD, geldigVnr, maakInhoud, controleerInhoud, nieuwstePerPersoon, mesoWeken, weekOverzicht, weekRegels, controleerPlan, geplandeLessen, STATUS_OPEN, STATUS_GEDAAN, regelsVan, persoonTrend, totaalVan });
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Overzicht = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);
@@ -1910,6 +1955,13 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     }
   }
 
+  /** De krachtoefeningen (blad MPT_PERSOON regels 27-33) met een naam. */
+  function krachtNamen(data) {
+    const uit = [];
+    for (let r = 27; r <= 33; r++) { const naam = String((data.labels && data.labels["A" + r]) || "").trim(); if (naam) uit.push({ r, naam }); }
+    return uit;
+  }
+
   /** Eén geopend uitslagenbestand. `zoek` geeft de persoon of null; `toon` tekent hem in `host`. */
   function maak(data) {
     controleer(data);
@@ -1918,6 +1970,20 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
       gemaakt: String(data.gemaakt || ""),
       aantal: index.size,
       zoek: (vnr) => { const key = String(vnr == null ? "" : vnr).trim(); return (key && index.get(key)) || null; },
+      // Voor de les (tablet): de krachtoefeningen uit het blad, de pace-factoren en standaardwaarden.
+      oefeningen: () => krachtNamen(data),
+      // V-nummers van de groep (alleen wie in het groepsbestand staat, niet wie alleen in de historie voorkomt), gesorteerd.
+      leden: () => [...new Set((Array.isArray(data.personen) ? data.personen : []).filter((p) => p && p.v != null && String(p.v).trim()).map((p) => String(p.v).trim()))]
+        .sort((a, b) => a.localeCompare(b, "nl", { numeric: true })),
+      bepakking: Array.isArray(data.bepakking) ? data.bepakking : [],
+      invoer: data.invoer && typeof data.invoer === "object" ? data.invoer : {},
+      // 1000m-tijd en 1RM per oefening zoals de volledige weergave ze gebruikt (met terugval op de historie).
+      lesWaarden: (p) => {
+        const n = (kiesWeergave(data, hist, p).toon || {}).n || {};
+        // afstanden: welke afstand in de tabel Trainingsafstanden met het 5 km-equivalent (B72) rekent.
+        const afstanden = (Array.isArray(data.afstanden) ? data.afstanden : []).filter((x) => x && typeof x.m === "number").map((x) => ({ m: x.m, basis: x.basis === "B72" ? "B72" : "B50" }));
+        return { b50: num(n.B50), b72: num(n.B72), afstanden, kracht: krachtNamen(data).map((k) => ({ naam: k.naam, rm: num(n["D" + k.r]) })) };
+      },
       weergave: (p) => kiesWeergave(data, hist, p),
       toon: (host, p) => toonPersoon(data, hist, host, p),
       // Kort: AMF-totaal en FPM-eindresultaat zoals de volledige weergave ze toont (met terugval op de historie).
@@ -1936,10 +2002,253 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
 
 "use strict";
 /*
+ * Les: aanwezigheid bij een les, door de instructeur op de tablet bijgehouden.
+ * Rekent per V-nummer de doelen uit (looptijd, kg) met dezelfde regels als Uitslagen, en maakt de inhoud
+ * die naar de brievenbus gaat. In dat bestand staan alleen de les, de onderdelen (bijv. 400 m op 90%) en
+ * de V-nummers van wie er was; de doelen (afgeleid van testuitslagen) gaan niet mee.
+ * Functies wijzigen hun invoer niet.
+ */
+(function (root) {
+  const FORMAAT_INHOUD = "mpt-les-inhoud";
+  const FORMAAT_UIT = "mpt-lessen-uit";        // bestand dat de tablet inlevert: lijst van lessen, elk versleuteld voor de brievenbus
+  const MAX_REGELS = 10;                       // per onderdeel
+  const MAX_AANWEZIG = 200;
+  const MAX_LESSEN = 300;                      // per inleverbestand
+  const MAX_VOORUIT_MS = 24 * 60 * 60 * 1000;
+  const VNR_PATROON = /^\d{3,10}$/;
+  const ID_PATROON = /^[0-9a-f]{16}$/;
+  const GRENZEN = Object.freeze({
+    loop: { m: [50, 42195], pct: [30, 120] },
+    kracht: { pct: [30, 110] },
+    speedmars: { kg: [0, 60], km: [0.5, 60] }
+  });
+  const ONDERDELEN = Object.freeze(["loop", "kracht", "speedmars"]);
+  // Vanaf deze afstand rekent de looptijd met de 5 km-tijd (B72), daaronder (intervallen, t/m 3000 m) met de 1000m-tijd (B50).
+  // Zoals de tabel Trainingsafstanden in de Excel (3000 m op 1000m, 5/8/10/12 km op 5 km); besloten 17-11-2026.
+  const VANAF_5KM_M = 5000;
+
+  class LesFout extends Error {
+    constructor(melding) { super(melding); this.name = "LesFout"; }
+  }
+  const tekst = (v, max) => String(v === undefined || v === null ? "" : v).slice(0, max);
+  const isGetal = (v, [min, max]) => typeof v === "number" && isFinite(v) && v >= min && v <= max;
+  const natuurlijk = (a, b) => a.localeCompare(b, "nl", { numeric: true });
+  const geldigVnr = (v) => { const s = tekst(v, 20).trim(); return VNR_PATROON.test(s) ? s : null; };
+
+  /** Getal uit invoer ("400", "92,5", "80%"); null als het geen gewoon getal is ("1.000", "400m", "4e2" worden geweigerd). */
+  function leesGetal(v) {
+    const t = String(v === undefined || v === null ? "" : v).trim().replace(/\s*%$/, "");
+    if (!/^\d+(?:[.,]\d{1,2})?$/.test(t)) return null;   // hooguit 2 decimalen: "1.000" (duizend) is dan geen 1
+    const n = Number(t.replace(",", "."));
+    return isFinite(n) ? n : null;
+  }
+
+  /** Controleert de onderdelen van een les. Geeft een schone kopie of gooit LesFout met een melding voor de instructeur. */
+  function controleerOnderdelen(o) {
+    const x = o && typeof o === "object" ? o : {};
+    const lijst = (naam) => (Array.isArray(x[naam]) ? x[naam] : []);
+    for (const naam of ONDERDELEN) if (lijst(naam).length > MAX_REGELS) throw new LesFout("Maximaal " + MAX_REGELS + " regels per onderdeel.");
+    const loop = lijst("loop").map((r) => {
+      if (!r || !isGetal(r.m, GRENZEN.loop.m) || !isGetal(r.pct, GRENZEN.loop.pct)) throw new LesFout("Hardlopen: afstand " + GRENZEN.loop.m.join("-") + " m en " + GRENZEN.loop.pct.join("-") + "%.");
+      return { m: r.m, pct: r.pct };
+    });
+    const kracht = lijst("kracht").map((r) => {
+      if (!r || typeof r.naam !== "string" || !r.naam.trim() || !isGetal(r.pct, GRENZEN.kracht.pct)) throw new LesFout("Kracht: kies een oefening en " + GRENZEN.kracht.pct.join("-") + "% van 1RM.");
+      return { naam: tekst(r.naam, 60), pct: r.pct };
+    });
+    const speedmars = lijst("speedmars").map((r) => {
+      if (!r || !isGetal(r.kg, GRENZEN.speedmars.kg) || !isGetal(r.km, GRENZEN.speedmars.km)) throw new LesFout("Speedmars: bepakking " + GRENZEN.speedmars.kg.join("-") + " kg en afstand " + GRENZEN.speedmars.km.join("-") + " km.");
+      return { kg: r.kg, km: r.km };
+    });
+    return { loop, kracht, speedmars };
+  }
+
+  /** Aanwezigen: geldige V-nummers, elk één keer, gesorteerd. */
+  function controleerAanwezig(lijst) {
+    if (!Array.isArray(lijst) || lijst.length > MAX_AANWEZIG) throw new LesFout("Maximaal " + MAX_AANWEZIG + " aanwezigen.");
+    const schoon = lijst.map(geldigVnr);
+    if (schoon.includes(null)) throw new LesFout("Een V-nummer bestaat uit 3 tot 10 cijfers.");
+    if (new Set(schoon).size !== schoon.length) throw new LesFout("Een V-nummer staat er twee keer in.");
+    return [...schoon].sort(natuurlijk);
+  }
+
+  function nieuwId() {
+    return [...crypto.getRandomValues(new Uint8Array(8))].map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  /** De inhoud van één gegeven les, zoals hij naar de brievenbus gaat. */
+  function maakInhoud({ code, les, onderdelen, aanwezig, nu }) {
+    const naam = tekst(les && les.naam, 120).trim();
+    if (!naam) throw new LesFout("Kies een les of typ een naam.");
+    const lijst = controleerAanwezig(aanwezig);
+    if (!lijst.length) throw new LesFout("Vul minstens één V-nummer in.");
+    return { formaat: FORMAAT_INHOUD, versie: 1, code: String(code || ""), id: nieuwId(), gemaakt: (nu || new Date()).toISOString(),
+      les: { nr: tekst(les.nr, 10), d: tekst(les.d, 60), naam }, onderdelen: controleerOnderdelen(onderdelen), aanwezig: lijst };
+  }
+
+  /** Beheer/dashboard: controleert een ontsleutelde les. Vreemde invoer wordt geweigerd, niet gerepareerd. */
+  function controleerInhoud(x, verwachteCode, nuMs) {
+    const isGoed = x && typeof x === "object" && x.formaat === FORMAAT_INHOUD && x.versie === 1 && typeof x.id === "string" && ID_PATROON.test(x.id)
+      && typeof x.gemaakt === "string" && !Number.isNaN(Date.parse(x.gemaakt)) && x.les && typeof x.les === "object" && typeof x.les.naam === "string" && x.les.naam.trim();
+    if (!isGoed) throw new LesFout("Deze les heeft een onbekende opbouw.");
+    if (String(x.code || "") !== String(verwachteCode || "")) throw new LesFout("Deze les is van een andere groep.");
+    if (typeof nuMs === "number" && Date.parse(x.gemaakt) > nuMs + MAX_VOORUIT_MS) throw new LesFout("Deze les heeft een datum in de toekomst. Zet de klok van de tablet goed.");
+    const aanwezig = controleerAanwezig(x.aanwezig);
+    if (!aanwezig.length) throw new LesFout("Deze les heeft geen aanwezigen.");
+    return { code: String(x.code || ""), id: x.id, gemaakt: x.gemaakt, les: { nr: tekst(x.les.nr, 10), d: tekst(x.les.d, 60), naam: tekst(x.les.naam, 120) },
+      onderdelen: controleerOnderdelen(x.onderdelen), aanwezig };
+  }
+
+  /** Controleert het omhulsel van een inleverbestand (de lessen zelf zijn elk apart versleuteld). */
+  function controleerUit(w, controleerLog) {
+    const isGoed = Boolean(w) && typeof w === "object" && w.formaat === FORMAAT_UIT && w.versie === 1 && typeof w.code === "string"
+      && Array.isArray(w.lessen) && w.lessen.length > 0 && w.lessen.length <= MAX_LESSEN;
+    if (!isGoed) throw new LesFout("Dit is geen lessenbestand van COMBATREADY.");
+    w.lessen.forEach(controleerLog);
+    if (w.lessen.some((l) => l.code !== w.code)) throw new LesFout("Dit lessenbestand bevat lessen van een andere groep.");
+    return w;
+  }
+  function maakUit(code, bestanden, nu) {
+    if (!bestanden.length || bestanden.length > MAX_LESSEN) throw new LesFout("Een lessenbestand bevat 1 tot " + MAX_LESSEN + " lessen.");
+    return { formaat: FORMAAT_UIT, versie: 1, code: String(code || ""), gemaakt: (nu || new Date()).toISOString(), lessen: bestanden };
+  }
+
+  /** Per les één keer (zelfde id), nieuwste eerst. */
+  function uniek(lessen) {
+    const perId = new Map();
+    for (const l of lessen) if (!perId.has(l.id)) perId.set(l.id, l);
+    return [...perId.values()].sort((a, b) => Date.parse(b.gemaakt) - Date.parse(a.gemaakt));
+  }
+
+  /* ---------- doelen per V-nummer (zelfde rekenregels als Uitslagen) ---------- */
+  function xround(x, d) {
+    if (typeof x !== "number" || !isFinite(x)) return x;
+    const m = Math.pow(10, d), v = Number((Math.abs(x) * m).toPrecision(15));
+    return Math.sign(x) * Math.round(v) / m;
+  }
+  const xmod = (a, b) => a - b * Math.floor(a / b);
+  const mmss = (s) => Math.floor(s / 60) + ":" + String(xround(xmod(s, 60), 0)).padStart(2, "0");
+  const kgTekst = (x) => x.toLocaleString("nl-NL", { maximumFractionDigits: 1 });
+
+  /** Looptijd in seconden voor afstand m op pct% van de 1000m-tijd b50 (zoals de tabel Trainingsafstanden). */
+  const looptijd = (b50, m, pct) => xround(b50 * Math.pow(m / 1000, 1.06) * (100 / xround(pct, 6)), 0);
+  /** Gewicht bij pct% van 1RM, op 0,1 kg (zoals de tabel % van 1RM). */
+  const krachtKg = (rm, pct) => xround(rm * (pct / 100), 1);
+
+  /**
+   * Doelen van één persoon. `waarden` komt uit Uitslagen (lesWaarden): { b50, b72, afstanden, kracht: [{ naam, rm }] }, of null als het
+   * V-nummer niet in het groepsbestand staat. Geeft per regel de tekst ("1:23", "85 kg") of "–".
+   * Basis van de looptijd: onder 5 km (intervallen, t/m 3000 m) de 1000m-tijd, vanaf 5 km de 5 km-tijd. Geen 5 km-tijd bekend: "–"
+   * (zoals de Excel: geen 5 km, dan blijven de lange afstanden leeg).
+   */
+  function doelen(waarden, onderdelen) {
+    const o = controleerOnderdelen(onderdelen);
+    const getal = (x) => (typeof x === "number" && isFinite(x) ? x : null);
+    const basisVan = (m) => getal(waarden && (m >= VANAF_5KM_M ? waarden.b72 : waarden.b50));
+    const rmVan = (naam) => { const k = waarden && (waarden.kracht || []).find((x) => x.naam === naam); return k && typeof k.rm === "number" ? k.rm : null; };
+    return {
+      loop: o.loop.map((r) => { const b = basisVan(r.m); return b === null ? "–" : mmss(looptijd(b, r.m, r.pct)); }),
+      kracht: o.kracht.map((r) => { const rm = rmVan(r.naam); return rm === null ? "–" : kgTekst(krachtKg(rm, r.pct)) + " kg"; })
+    };
+  }
+
+  /** Waarom er bij deze persoon een "–" staat: welke waarden ontbreken in het groepsbestand (lege lijst = niets). */
+  function ontbreekt(waarden, onderdelen) {
+    const o = controleerOnderdelen(onderdelen);
+    if (!waarden) return ["niet in het groepsbestand"];
+    const heeft = (x) => typeof x === "number" && isFinite(x);
+    const uit = [];
+    if (o.loop.some((r) => r.m < VANAF_5KM_M) && !heeft(waarden.b50)) uit.push("1000m-tijd");
+    if (o.loop.some((r) => r.m >= VANAF_5KM_M) && !heeft(waarden.b72)) uit.push("5 km-tijd");
+    for (const r of o.kracht) { const k = (waarden.kracht || []).find((x) => x.naam === r.naam); if (!k || !heeft(k.rm)) uit.push("1RM " + r.naam); }
+    return [...new Set(uit)];
+  }
+
+  /** Speedmars is voor iedereen gelijk (hangt alleen af van bepakking en afstand): realistische tijd en pace. */
+  function speedmarsDoel(bepakking, r) {
+    let f = 1, cat = "";
+    for (const b of Array.isArray(bepakking) ? bepakking : []) if (b && r.kg >= b.kg) { f = b.factor; cat = b.cat; }
+    const tijd = xround(r.km * 6 * f, 1);
+    return { tijd: kgTekst(tijd) + " min", pace: mmss(xround(tijd * 60 / r.km, 0)) + " min/km", cat: String(cat || "") };
+  }
+
+  /** Korte omschrijving van de onderdelen, bijv. "400 m 90% · Bench 80% · Speedmars 15 kg 9 km". */
+  function omschrijving(onderdelen) {
+    const o = controleerOnderdelen(onderdelen);
+    const getal = (x) => String(x).replace(".", ",");
+    return [...o.loop.map((r) => getal(r.m) + " m " + getal(r.pct) + "%"), ...o.kracht.map((r) => r.naam + " " + getal(r.pct) + "%"),
+      ...o.speedmars.map((r) => "Speedmars " + getal(r.kg) + " kg " + getal(r.km) + " km")].join(" · ");
+  }
+
+  /*
+   * Voorstel uit de les in het rooster (FTS-overzicht, tabblad Lessen): D Zone ("80% OP", "DL3 · 90–95% AD"), E Km ("8 km"),
+   * F Opdracht ("8–10×400 m", "duurloop"), met de lesnaam als reserve. Alleen een voorstel: de instructeur past het aan.
+   * Percentage: een bereik geeft het midden (90–95 -> 92,5); "% HfMax" (hartslag) wordt niet overgenomen.
+   */
+  const getalVan = (t) => Number(String(t).replace(",", "."));
+  function percentageUit(tekst) {
+    const t = String(tekst || "");
+    const m = /(\d+(?:[.,]\d+)?)(?:\s*[–-]\s*(\d+(?:[.,]\d+)?))?\s*%(?!\s*Hf)/i.exec(t);
+    if (!m) return null;
+    const pct = m[2] ? (getalVan(m[1]) + getalVan(m[2])) / 2 : getalVan(m[1]);
+    return isGetal(pct, GRENZEN.loop.pct) ? Math.round(pct * 2) / 2 : null;
+  }
+  function herhaalAfstandUit(tekst) {   // "8–10×400 m", "7-8 x 600m" -> 400 / 600
+    const m = /[×x]\s*(\d+(?:[.,]\d+)?)\s*(km|m)\b/i.exec(String(tekst || ""));
+    if (!m) return null;
+    const meters = getalVan(m[1]) * (m[2].toLowerCase() === "km" ? 1000 : 1);
+    return isGetal(meters, GRENZEN.loop.m) ? meters : null;
+  }
+  function kmUit(tekst) {   // "8 km", "9,5 km"; een bereik ("3,2–4 km") telt niet
+    const m = /(^|[^\d.,–-])(\d+(?:[.,]\d+)?)\s*km\b/i.exec(String(tekst || ""));
+    if (!m || /[–-]\s*$/.test(String(tekst).slice(0, m.index + m[1].length))) return null;
+    const km = getalVan(m[2]);
+    return km > 0 && km <= 60 ? km : null;
+  }
+  /** Geeft { aan, loop: { m, pct } | null, speedmarsKm } met wat er uit de les te halen is (null = niet gevonden). */
+  function voorstel(L) {
+    const x = L && typeof L === "object" ? L : {};
+    const aan = standaardOnderdelen(x.d);
+    const naam = String(x.les || "");
+    const herhaal = herhaalAfstandUit(x.opdr) ?? herhaalAfstandUit(naam);
+    const km = kmUit(x.km) ?? kmUit(naam);
+    const m = herhaal ?? (km !== null && km * 1000 <= GRENZEN.loop.m[1] ? km * 1000 : null);
+    const pct = percentageUit(x.zone) ?? percentageUit(naam);
+    return { aan, loop: m !== null || pct !== null ? { m, pct } : null, speedmarsKm: km };
+  }
+
+  /**
+   * Hoe de invoerstap eruitziet bij deze les: "vast" (één onderdeel, geen keuze: hardlopen/kracht/speedmars),
+   * "kies" (COMBI of een zelf getypte les: instructeur kiest de onderdelen) of "geen" (zwemmen, MMA, marsen …: geen doelen,
+   * meteen naar de aanwezigen).
+   */
+  function invoerSoort(discipline, isEigen) {
+    const a = standaardOnderdelen(discipline);
+    if (isEigen || /combi/i.test(String(discipline || ""))) return "kies";
+    return a.loop || a.kracht || a.speedmars ? "vast" : "geen";
+  }
+
+  /** Welke onderdelen standaard aan staan bij een discipline uit het rooster. */
+  function standaardOnderdelen(discipline) {
+    const d = String(discipline || "").toLowerCase();
+    return { loop: /hardlo|loop|interval/.test(d), kracht: /kracht/.test(d), speedmars: /speedmars/.test(d) };
+  }
+
+  const api = Object.freeze({ VANAF_5KM_M, LesFout, FORMAAT_INHOUD, FORMAAT_UIT, MAX_REGELS, MAX_AANWEZIG, MAX_LESSEN, GRENZEN, geldigVnr, leesGetal,
+    controleerOnderdelen, controleerAanwezig, maakInhoud, controleerInhoud, controleerUit, maakUit, uniek, doelen, speedmarsDoel, omschrijving,
+    standaardOnderdelen, invoerSoort, voorstel, ontbreekt, looptijd, krachtKg, mmss });
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.Les = api;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+"use strict";
+/*
  * Groepen (instructeurs): groepsbestanden (uitslagen en rooster) importeren, met het groepswachtwoord openen,
  * uitslagen per persoon en het rooster bekijken, en zoeken over alle geopende groepen.
  * Overgenomen uit de instructie-app: zelfde stappen, teksten en regels. Eigen opslag ("mpt-groepen"), alleen
  * versleutelde bestanden; ontsleuteld alleen in geheugen.
+ * Een groep kan ook het brievenbus-bestand voor de mariniers hebben (zelfde groepswachtwoord): dan kan de instructeur
+ * op het tabblad Les (bron/lesscherm.js) een les bewaren en de aanwezigheid inleveren.
  */
 (function (root) {
   const { Basis, Kluis, Uitslagen } = root;
@@ -1954,8 +2263,8 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     ["zwemmen", "#6FB3BA"], ["oriëntatie", "#C9A96A"], ["orientatie", "#C9A96A"], ["combi", "#A99A80"], ["hiba", "#A99A80"],
     ["klito", "#7EA6B3"], ["toba", "#7EA6B3"], ["touwbaan", "#7EA6B3"], ["ski", "#8E9BA8"]];
 
-  let groepen = [];      // [{ code, mpt, rooster }] versleuteld (mag bewaard worden); mpt = uitslagenbestand
-  let open = new Map();  // code -> { naam, naamMpt, naamRooster, naamConflict, uitslagen, rooster, half } alleen in geheugen
+  let groepen = [];      // [{ code, mpt, rooster, bus }] versleuteld (mag bewaard worden); mpt = uitslagenbestand, bus = brievenbus-bestand
+  let open = new Map();  // code -> { naam, naamMpt, naamRooster, naamConflict, uitslagen, rooster, bus, half } alleen in geheugen
   let huidig = null;     // code van de groep die bekeken wordt
   let tab = "persoon";
   let rState = { meso: 0, wk: 0, les: null };   // les: { nr, dag } als één les open staat
@@ -1983,13 +2292,13 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     if (ONVERSLEUTELD.includes(obj.formaat)) throw new ImportFout("Dit is het ONVERSLEUTELDE exportbestand. Versleutel het eerst via Bestanden maken en importeer dan het .mpt-bestand.");
     if (obj.formaat !== Kluis.FORMAAT_ENC || typeof obj.data !== "string" || typeof obj.salt !== "string" || typeof obj.iv !== "string") throw new ImportFout("Dit is geen MPT-databestand.");
     if (obj.iter !== Kluis.ITER) throw new ImportFout("Dit bestand heeft ongeldige beveiligingsinstellingen en wordt geweigerd.");
-    if (obj.inhoud === "brievenbus") throw new ImportFout("Dit is het brievenbus-bestand voor de mariniers; dat hoort niet bij de groepen.");
-    if (obj.inhoud !== undefined && obj.inhoud !== "rooster") throw new ImportFout("Dit is geen MPT-databestand.");
+    if (obj.inhoud !== undefined && obj.inhoud !== "rooster" && obj.inhoud !== "brievenbus") throw new ImportFout("Dit is geen MPT-databestand.");
     if (typeof obj.code === "string" && obj.code && !CODE_PATROON.test(obj.code)) throw new ImportFout("Dit bestand heeft een ongeldige code en wordt geweigerd.");
-    const soort = obj.inhoud === "rooster" ? "rooster" : "mpt";
+    if (obj.inhoud === "brievenbus" && !obj.code) throw new ImportFout("Dit brievenbus-bestand heeft geen groepscode en wordt geweigerd.");
+    const soort = obj.inhoud === "rooster" ? "rooster" : obj.inhoud === "brievenbus" ? "bus" : "mpt";
     const code = typeof obj.code === "string" ? obj.code.toUpperCase() : "";
     const bestaand = lijst.find((x) => x.code === code);
-    if (!bestaand) return { uitkomst: "nieuw:" + codeLabel(code), lijst: [...lijst, { code, mpt: null, rooster: null, [soort]: obj }] };
+    if (!bestaand) return { uitkomst: "nieuw:" + codeLabel(code), lijst: [...lijst, { code, mpt: null, rooster: null, bus: null, [soort]: obj }] };
     if (bestaand[soort] && bestaand[soort].data === obj.data) return { uitkomst: "dubbel", lijst };
     const vervangen = Boolean(bestaand[soort]);
     return { uitkomst: (vervangen ? "vervangen:" : "toegevoegd:") + codeLabel(code), lijst: lijst.map((g) => (g.code === code ? { ...g, [soort]: obj } : g)), code };
@@ -2016,7 +2325,8 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     }
     lijstScherm();
     const pak = (pre) => ok.filter((x) => x.startsWith(pre)).map((x) => x.slice(pre.length));
-    const nieuwe = pak("nieuw:"), vervangen = pak("vervangen:"), toegevoegd = pak("toegevoegd:"), dubbel = ok.filter((x) => x === "dubbel").length;
+    // Meer bestanden van één nieuwe groep: alleen "nieuwe groep" noemen, niet ook "toegevoegd".
+    const nieuwe = [...new Set(pak("nieuw:"))], vervangen = [...new Set(pak("vervangen:"))], toegevoegd = [...new Set(pak("toegevoegd:"))].filter((c) => !nieuwe.includes(c)), dubbel = ok.filter((x) => x === "dubbel").length;
     const kort = (l) => (l.length > 6 ? l.slice(0, 6).join(", ") + " en " + (l.length - 6) + " meer" : l.join(", "));
     const delen = [];
     if (nieuwe.length) delen.push(aantal(nieuwe.length, "nieuwe groep", "nieuwe groepen") + ": " + kort(nieuwe) + ".");
@@ -2029,32 +2339,42 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
   }
 
   /* ---------- openen ---------- */
-  // Probeert pw op wat van deze groep nog dicht is (uitslagen en/of rooster). Geeft true als er iets met dit wachtwoord openging.
+  const VELD = { mpt: "uitslagen", rooster: "rooster", bus: "bus" };
+  const SOORTNAAM = { mpt: "uitslagenbestand", rooster: "rooster", bus: "brievenbus-bestand" };
+  // Probeert pw op wat van deze groep nog dicht is (uitslagen, rooster, brievenbus). Geeft true als er iets met dit wachtwoord openging.
   async function probeerGroep(g, pw, meld) {
     const teller = slotTeller;
     const oud = open.get(g.code);
-    let e = oud ? { ...oud } : { naamMpt: "", naamRooster: "", uitslagen: null, rooster: null };
+    let e = oud ? { ...oud } : { naamMpt: "", naamRooster: "", uitslagen: null, rooster: null, bus: null };
     let iets = false;
-    for (const soort of ["mpt", "rooster"]) {
+    for (const soort of ["mpt", "rooster", "bus"]) {
       const w = g[soort];
-      if (!w || (soort === "mpt" ? e.uitslagen : e.rooster)) continue;
+      if (!w || e[VELD[soort]]) continue;
       try {
-        if (soort === "mpt") { const r = await Kluis.openUitslagen(w, pw); e = { ...e, uitslagen: Uitslagen.maak(r.data), naamMpt: r.naam }; }
-        else { const r = await Kluis.openRooster(w, pw); e = { ...e, rooster: r.rooster, naamRooster: r.naam }; }
+        if (soort === "mpt") {
+          const r = await Kluis.openUitslagen(w, pw); e = { ...e, uitslagen: Uitslagen.maak(r.data), naamMpt: r.naam };
+          // Sleutel voor een lopende les (tabblad Les); mislukt dat, dan werkt de les zonder tussentijds bewaren.
+          try { await root.LesScherm.sleutel(g.code, pw); } catch (_) { /* zie LesScherm.heeftInvoer: dan wel bevestiging bij weggaan */ }
+        }
+        else if (soort === "rooster") { const r = await Kluis.openRooster(w, pw); e = { ...e, rooster: r.rooster, naamRooster: r.naam }; }
+        else { const r = await Kluis.openBrievenbusBestand(w, pw); e = { ...e, bus: { publiek: r.publiek, gemaakt: r.gemaakt } }; }
         iets = true;
       } catch (fout) {
         if (fout instanceof Kluis.KluisFout && fout.code === "WACHTWOORD") continue;
         iets = true;
         meld.push(fout instanceof Kluis.KluisFout && fout.code === "CODE"
           ? codeLabel(g.code) + ": de code op dit bestand klopt niet met de inhoud. Verwijder deze groep en vraag een nieuw bestand."
-          : codeLabel(g.code) + ": het " + (soort === "mpt" ? "uitslagenbestand" : "rooster") + " is onbruikbaar. Vraag een nieuw bestand.");
+          : codeLabel(g.code) + ": het " + SOORTNAAM[soort] + " is onbruikbaar. Vraag een nieuw bestand.");
       }
     }
     if (teller !== slotTeller) return false;   // intussen vergrendeld: niets openzetten
-    if (!e.uitslagen && !e.rooster) { open.delete(g.code); return iets; }
+    if (!e.uitslagen && !e.rooster) {
+      if (e.bus) meld.push(codeLabel(g.code) + ": alleen het brievenbus-bestand staat op dit toestel. Importeer ook het groepsbestand (…_MPT_….mpt) om de groep te openen.");
+      open.delete(g.code); return iets;
+    }
     const naam = String(e.naamMpt || e.naamRooster || "").slice(0, MAX_NAAM);
     open.set(g.code, { ...e, naam, naamConflict: Boolean(e.naamMpt && e.naamRooster && e.naamMpt !== e.naamRooster),
-      half: Boolean((g.mpt && !e.uitslagen) || (g.rooster && !e.rooster)) });
+      half: Boolean((g.mpt && !e.uitslagen) || (g.rooster && !e.rooster) || (g.bus && !e.bus)) });
     return iets;
   }
   async function probeerAlle() {
@@ -2083,6 +2403,8 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     } finally { zoekBezig = false; veld.disabled = false; busy(knop, false, "Open"); }
   }
 
+  const nogDicht = (g, e) => ["mpt", "rooster", "bus"].filter((s) => g[s] && !e[VELD[s]]).map((s) => ({ mpt: "MPT", rooster: "rooster", bus: "brievenbus" })[s]).join(", ");
+
   /* ---------- lijst van groepen ---------- */
   function lijstScherm() {
     huidig = null; sluitGroepWeergave();
@@ -2105,8 +2427,8 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
       const e = open.get(g.code);
       const naam = e ? naamLabel(g.code, e) : "🔒 vergrendeld";
       if (f && !(g.code.toLowerCase().includes(f) || (e && naam.toLowerCase().includes(f)))) continue;
-      const delen = [g.mpt ? "MPT " + (g.mpt.gemaakt || "?") : "", g.rooster ? "rooster " + (g.rooster.gemaakt || "?") : ""].filter(Boolean);
-      if (e && e.half) delen.push(e.uitslagen ? "rooster nog dicht" : "MPT nog dicht");
+      const delen = [g.mpt ? "MPT " + (g.mpt.gemaakt || "?") : "", g.rooster ? "rooster " + (g.rooster.gemaakt || "?") : "", g.bus ? "brievenbus" : ""].filter(Boolean);
+      if (e && e.half) delen.push(nogDicht(g, e) + " nog dicht");
       const knop = el("button", { class: "g", type: "button" }, el("span", { class: "code", text: codeLabel(g.code) }),
         el("span", { class: "nm" + (e ? "" : " dicht"), text: naam }), el("small", { text: delen.join(" · ") }));
       const li = el("li", null, knop);
@@ -2146,16 +2468,20 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
   }
   async function verwijderGroep(code) {
     const e = open.get(code);
-    if (!confirm("Groep " + codeLabel(code) + (e && e.naam ? " (" + e.naam + ")" : "") + " van dit toestel verwijderen?")) return;
+    let n = 0;
+    try { n = await root.LesScherm.nietIngeleverd(code); } catch (_) { n = 0; }
+    if (!confirm("Groep " + codeLabel(code) + (e && e.naam ? " (" + e.naam + ")" : "") + " van dit toestel verwijderen?" + (n ? " Ook " + aantal(n, "les", "lessen") + " die nog niet " + (n === 1 ? "is" : "zijn") + " ingeleverd, verdwijnen." : ""))) return;
     let over;
-    try { over = (await bewaardeGroepen()).filter((g) => g.code !== code); await opslag.setAlles({ [KV_GROEPEN]: over }); }
+    try { over = (await bewaardeGroepen()).filter((g) => g.code !== code); await opslag.setAlles({ [KV_GROEPEN]: over }); await root.LesScherm.wisGroep(code); }
     catch (_) { return msg($("#msgGroepen"), "Opslaan op dit toestel is mislukt."); }
     groepen = over; open.delete(code);
     lijstScherm();
     if (groepen.length) msg($("#msgGroepen"), "Groep " + codeLabel(code) + " verwijderd.", "ok");
   }
   async function wisAlles() {
-    if (!confirm("Alle groepen van dit toestel wissen?")) return;
+    let n = 0;
+    try { n = await root.LesScherm.nietIngeleverd(null); } catch (_) { n = 0; }
+    if (!confirm("Alle groepen van dit toestel wissen?" + (n ? " Ook " + aantal(n, "les", "lessen") + " die nog niet " + (n === 1 ? "is" : "zijn") + " ingeleverd, verdwijnen." : ""))) return;
     try { await opslag.wisAlles(); } catch (_) { return msg($("#msgGroepen"), "Wissen is mislukt."); }
     slotTeller++;
     groepen = []; open = new Map();
@@ -2180,28 +2506,42 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
   function naarGroep(code, vnr) {
     const e = open.get(code); if (!e) return;
     huidig = code; rState = { meso: 0, wk: 0, les: null };
-    tab = e.uitslagen ? "persoon" : "rooster";
-    $("#gTabs").hidden = !(e.uitslagen && e.rooster);
+    tab = e.uitslagen ? (root.LesScherm.heeftConcept(code) ? "les" : "persoon") : "rooster";
+    $("#gTabRooster").hidden = !e.rooster;
+    $("#gTabPersoon").hidden = !e.uitslagen;
+    $("#gTabLes").hidden = !e.uitslagen;
+    $("#gTabs").hidden = [e.uitslagen, e.rooster, e.uitslagen].filter(Boolean).length < 2;
     const info = [];
     if (e.uitslagen) info.push("MPT van " + (e.uitslagen.gemaakt || "?") + " · " + aantal(e.uitslagen.aantal, "persoon", "personen"));
     if (e.rooster) info.push("Rooster van " + (e.rooster.gemaakt || "?"));
-    if (e.half) info.push((e.uitslagen ? "Rooster" : "MPT") + " niet ontgrendeld: ander wachtwoord");
+    if (e.bus) info.push("Brievenbus van " + (e.bus.gemaakt || "?"));
+    const g = groepen.find((x) => x.code === code);
+    if (e.half && g) info.push("Niet ontgrendeld (ander wachtwoord): " + nogDicht(g, e));
     $("#gDataInfo").textContent = info.join(" · ");
     msg($("#msgGInfo"), e.naamConflict ? "Let op: het MPT-bestand en het rooster van " + codeLabel(code) + " hebben een verschillende groepsnaam (" + e.naamMpt + " / " + e.naamRooster + "). Controleer in Bestanden maken." : "", "err");
     $("#gQ").value = vnr || "";
+    if (root.LesScherm) root.LesScherm.sluit();
+    $("#gViewLes").hidden = true;   // zetTab start Les dan opnieuw voor deze groep
     hooks.titel(codeLabel(code) + (e.naam ? " · " + e.naam : ""));
     zetTab(tab);
     hooks.show("scrGroep");
     if (vnr) zoekInGroep(vnr);
   }
+  // Een les die nog niet met Einde is afgesloten, gaat niet stil verloren.
+  const magWeg = () => !root.LesScherm || !root.LesScherm.heeftInvoer() || confirm("De les is nog niet afgesloten met Einde. Weggaan en de invoer kwijtraken?");
   function zetTab(t) {
+    if (tab === "les" && t === "les" && !$("#gViewLes").hidden) return;   // nog eens op Les tikken: niets wissen
+    if (tab === "les" && t !== "les" && !magWeg()) return;
     tab = t;
-    for (const [id, naam] of [["#gTabPersoon", "persoon"], ["#gTabRooster", "rooster"]]) {
+    for (const [id, naam] of [["#gTabPersoon", "persoon"], ["#gTabRooster", "rooster"], ["#gTabLes", "les"]]) {
       if (naam === t) $(id).setAttribute("aria-current", "page"); else $(id).removeAttribute("aria-current");
     }
     $("#gViewPersoon").hidden = t !== "persoon";
     $("#gViewRooster").hidden = t !== "rooster";
+    $("#gViewLes").hidden = t !== "les";
     if (t === "rooster") { rState = { ...rState, les: null }; tekenRooster(); }
+    if (t === "les") root.LesScherm.start(huidigeGroep());
+    else root.LesScherm.sluit();
   }
   function zoekInGroep(v) {
     const host = $("#gPerson"), e = open.get(huidig);
@@ -2285,6 +2625,7 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
 
   /* ---------- slot ---------- */
   function sluitGroepWeergave() {
+    if (root.LesScherm) root.LesScherm.sluit();
     for (const id of ["#gPerson", "#gViewRooster", "#gDataInfo"]) $(id).textContent = "";
     for (const id of ["#msgGZoek", "#msgGInfo"]) msg($(id), "");
     $("#gQ").value = "";
@@ -2298,6 +2639,7 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
   function vergrendel() {
     slotTeller++;
     open = new Map(); huidig = null; rState = { meso: 0, wk: 0, les: null };
+    if (root.LesScherm) root.LesScherm.vergrendel();
     sluitGroepWeergave(); wisVelden();
   }
 
@@ -2311,10 +2653,11 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     $("#gQAll").addEventListener("input", (e) => zoekAlle(e.target.value));
     $("#gFilter").addEventListener("input", tekenLijst);
     $("#btnGWis").addEventListener("click", wisAlles);
-    $("#btnGTerug").addEventListener("click", lijstScherm);
+    $("#btnGTerug").addEventListener("click", () => { if (tab !== "les" || magWeg()) lijstScherm(); });
     $("#btnGDel").addEventListener("click", () => { if (huidig !== null) verwijderGroep(huidig); });
     $("#gTabPersoon").addEventListener("click", () => zetTab("persoon"));
     $("#gTabRooster").addEventListener("click", () => zetTab("rooster"));
+    $("#gTabLes").addEventListener("click", () => zetTab("les"));
     $("#gQ").addEventListener("input", (e) => zoekInGroep(e.target.value));
     for (const id of ["#gQ", "#gQAll"]) $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); e.target.blur(); } });
     try { groepen = (await opslag.get(KV_GROEPEN)) || []; } catch (_) { groepen = []; opslagFout = true; }   // niet stil: lijstScherm meldt het
@@ -2332,26 +2675,747 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     catch (_) { return { status: "onleesbaar" }; }
   }
 
-  root.Groepen = Object.freeze({ koppel, lijstScherm, vergrendel, heeftOpen, uitslagVan });
+  /** Voor het tabblad Les: de groep die nu bekeken wordt (alleen in geheugen), of null. */
+  function huidigeGroep() {
+    const e = huidig === null ? null : open.get(huidig);
+    return e ? { code: huidig, naam: e.naam, uitslagen: e.uitslagen, rooster: e.rooster, bus: e.bus, heeftBusBestand: groepen.some((g) => g.code === huidig && g.bus) } : null;
+  }
+
+  root.Groepen = Object.freeze({ koppel, lijstScherm, vergrendel, heeftOpen, uitslagVan, huidigeGroep });
+})(globalThis);
+
+"use strict";
+/*
+ * Tabblad Les (instructeurs, tablet/telefoon): binnen een geopende groep een les afnemen.
+ * 1 les kiezen uit alle lessen van het rooster (of zelf een naam typen), 2 de onderdelen invullen (hardlopen: afstand en %,
+ * kracht: oefening en % 1RM, speedmars: bepakking en afstand; een combiles heeft er meer), 3 V-nummers van wie er is,
+ * 4 Einde: overzicht per V-nummer met doeltijd en kg (uit het groepsbestand, alleen op het scherm).
+ * Bewaren: alleen met het brievenbus-bestand van de groep. De les (zonder doelen) wordt dan versleuteld voor de brievenbus
+ * bewaard; alleen Beheer kan hem openen. "Lessen inleveren" maakt één bestand voor het dashboard.
+ * Ontsleuteld alleen in geheugen; sluiten of vergrendelen maakt alles leeg.
+ * Een les die nog loopt (of het overzicht na Einde) staat als concept op het toestel, versleuteld met een sleutel uit het
+ * groepswachtwoord (PBKDF2, zoals de groepsbestanden). Zo wist het automatische slot (tablet in de zak tijdens het lopen),
+ * vergrendelen of herladen de les niet: na het openen van de groep met het groepswachtwoord komt hij terug.
+ */
+(function (root) {
+  const { Basis, Brievenbus, Les } = root;
+  const { $, el, msg, busy } = Basis;
+  const opslag = Basis.maakOpslag("mpt-groepen");
+  const KV_LESSEN = "lessen";          // { code: [{ id, gemaakt, naam, omschrijving, aantal, ingeleverd, bestand }] } bestand = versleuteld voor de brievenbus
+  const MAX_BEWAARD = 300;
+  const KV_ZOUT = "conceptzout";       // willekeurig, per toestel; voor de sleutel van het concept
+  const kvConcept = (code) => "concept:" + code;   // { iv, data } versleuteld met de conceptsleutel
+  const ITER = 600000;
+  const enc = new TextEncoder(), dec = new TextDecoder();
+  const b64 = (u8) => { let t = ""; for (let i = 0; i < u8.length; i += 0x8000) t += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(t); };
+  const unb64 = (t) => Uint8Array.from(atob(t), (c) => c.charCodeAt(0));
+  const natuurlijk = (a, b) => String(a).localeCompare(String(b), "nl", { numeric: true });
+  const meervoud = (n, een, meer) => n + " " + (n === 1 ? een : meer);
+  const tweeCijfers = (n) => String(n).padStart(2, "0");
+  const datumTijd = (iso) => { const d = new Date(iso); return tweeCijfers(d.getDate()) + "-" + tweeCijfers(d.getMonth() + 1) + "-" + d.getFullYear() + " " + tweeCijfers(d.getHours()) + ":" + tweeCijfers(d.getMinutes()); };
+  const NAAM_ONDERDEEL = { loop: "Hardlopen", kracht: "Kracht", speedmars: "Speedmars" };
+
+  let groep = null;          // { code, naam, uitslagen, rooster, bus, heeftBusBestand } van Groepen
+  let stap = "lijst";        // lijst | kies | details | aanwezig | einde
+  let les = null;            // { nr, d, naam }
+  let aan = { loop: false, kracht: false, speedmars: false };
+  let regels = { loop: [], kracht: [], speedmars: [] };   // invoer als tekst
+  let aanwezig = [];
+  let filter = { q: "", d: "" };
+  let einde = null;          // { inhoud, bewaard } na Einde
+  let geheugen = new Map();  // id -> inhoud: lessen van deze sessie, om het overzicht nog eens te bekijken
+  let groepOpen = false;     // aanvinklijst van de groep open (stap Wie is er?)
+  let teller = 0;            // ophogen bij sluiten: wat daarna nog binnenkomt, wordt weggegooid
+  let sleutels = new Map();  // code -> CryptoKey voor het concept (alleen in geheugen, weg bij vergrendelen)
+  let metConcept = new Set();  // codes waarvan bij het openen een concept op het toestel stond
+
+  const host = () => $("#gViewLes");
+  const melding = () => $("#msgLes2");
+  const kaart = (titel, ...kids) => el("div", { class: "card" }, titel ? el("h2", { text: titel }) : null, ...kids);
+  const knop = (tekst, actie, klasse, extra) => { const b = el("button", { type: "button", class: klasse ?? "btn", ...(extra || {}) }, tekst); b.addEventListener("click", actie); return b; };
+  const invoer = (waarde, attrs) => el("input", { type: "text", class: "fill", autocomplete: "off", autocorrect: "off", spellcheck: "false", value: String(waarde ?? ""), ...attrs });
+
+  /* ---------- opslag ---------- */
+  async function bewaardeLessen() {
+    const alle = await opslag.get(KV_LESSEN);
+    const lijst = alle && typeof alle === "object" && Array.isArray(alle[groep.code]) ? alle[groep.code] : [];
+    return { alle: alle && typeof alle === "object" ? alle : {}, lijst: lijst.filter((x) => x && typeof x === "object" && x.bestand) };
+  }
+  async function zetLessen(code, lijst) {
+    const { alle } = await bewaardeLessen();   // opnieuw lezen: een ander venster kan intussen iets hebben gewijzigd
+    await opslag.setAlles({ [KV_LESSEN]: { ...alle, [code]: lijst } });
+  }
+
+  /* ---------- concept: lopende les, versleuteld met het groepswachtwoord ---------- */
+  /** Na het openen van een groep (Groepen): sleutel voor het concept afleiden. Geeft true als er een concept klaarstaat. */
+  async function sleutel(code, pw) {
+    let zout = await opslag.get(KV_ZOUT);
+    if (typeof zout !== "string") { zout = b64(crypto.getRandomValues(new Uint8Array(16))); await opslag.setAlles({ [KV_ZOUT]: zout }); }
+    const basis = await crypto.subtle.importKey("raw", enc.encode(pw + "|" + code), "PBKDF2", false, ["deriveKey"]);
+    const k = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: unb64(zout), iterations: ITER, hash: "SHA-256" }, basis, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+    sleutels = new Map([...sleutels, [code, k]]);
+    const heeft = Boolean(await opslag.get(kvConcept(code)));
+    metConcept = new Set([...metConcept].filter((c) => c !== code).concat(heeft ? [code] : []));
+    return heeft;
+  }
+  // Een les loopt van de invoer tot en met de tijden; een eerder bewaarde les opnieuw bekijken is geen lopende les.
+  const isBezig = () => stap === "details" || stap === "aanwezig" || (stap === "einde" && Boolean(einde) && !einde.bewaard);
+  /** Huidige les als concept bewaren (of weghalen als er geen les loopt). Fout bij bewaren: melding, de les zelf loopt door. */
+  async function bewaarConcept() {
+    if (!groep) return;
+    const code = groep.code, k = sleutels.get(code);
+    if (!k) return;
+    try {
+      if (!isBezig()) { metConcept = new Set([...metConcept].filter((c) => c !== code)); return await opslag.setAlles({ [kvConcept(code)]: null }); }
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const inhoud = { stap, les, aan, regels, aanwezig, einde };
+      const data = await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: enc.encode(kvConcept(code)) }, k, enc.encode(JSON.stringify(inhoud)));
+      await opslag.setAlles({ [kvConcept(code)]: { iv: b64(iv), data: b64(new Uint8Array(data)) } });
+      metConcept = new Set([...metConcept, code]);
+    } catch (_) { const m = melding(); if (m) msg(m, "Let op: de les kon niet tussentijds bewaard worden op dit toestel. Niet vergrendelen tot Einde."); }
+  }
+  /** Concept terugzetten. Onleesbaar (ander wachtwoord, beschadigd): weghalen. Geeft true als er iets hersteld is. */
+  async function herstelConcept(code) {
+    const k = sleutels.get(code), w = await opslag.get(kvConcept(code));
+    if (!k || !w) return false;
+    try {
+      const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(w.iv), additionalData: enc.encode(kvConcept(code)) }, k, unb64(w.data));
+      const c = JSON.parse(dec.decode(pt));
+      if (!c || !["details", "aanwezig", "einde"].includes(c.stap)) throw new Error("opbouw");
+      stap = c.stap; les = c.les; aan = c.aan; regels = c.regels; aanwezig = Array.isArray(c.aanwezig) ? c.aanwezig : []; einde = c.einde || null;
+      if (stap === "einde" && !einde) stap = "aanwezig";
+      return true;
+    } catch (_) { await opslag.setAlles({ [kvConcept(code)]: null }); metConcept = new Set([...metConcept].filter((x) => x !== code)); return false; }
+  }
+
+  /* ---------- schermen ---------- */
+  function teken() {
+    const h = host(); if (!h) return;
+    h.textContent = "";
+    if (!groep) return;
+    const scherm = { lijst: tekenLijst, kies: tekenKies, details: tekenDetails, aanwezig: tekenAanwezig, einde: tekenEinde }[stap];
+    scherm(h);
+    h.append(el("div", { class: "msg", id: "msgLes2" }));
+  }
+  const naar = (s) => { stap = s; teken(); scrollTo(0, 0); bewaarConcept(); };
+
+  // Stap 0: gegeven lessen, nieuwe les, inleveren.
+  async function tekenLijst(h) {
+    const t = teller;
+    const nieuw = knop("Nieuwe les", () => { les = null; aan = { loop: false, kracht: false, speedmars: false }; regels = { loop: [], kracht: [], speedmars: [] }; aanwezig = []; einde = null; naar("kies"); }, "btn", { id: "btnLesNieuw" });
+    const busNoot = groep.bus ? null : el("p", { class: "note", text: groep.heeftBusBestand
+      ? "Het brievenbus-bestand van deze groep ging niet open met dit wachtwoord. Je kunt een les afnemen, maar hij wordt niet bewaard."
+      : "Je kunt een les afnemen en het overzicht zien. Om de les te bewaren en in te leveren voor het dashboard: importeer ook het brievenbus-bestand van deze groep (…_Brievenbus_….mpt, zelfde groepswachtwoord) bij Alle groepen." });
+    h.append(kaart("Les", el("p", { class: "muted small", style: "margin-top:0", text: "Kies de les, controleer de opdracht, vink aan wie er is en druk op Tijden tonen: daarmee geef je de les. Einde als de les klaar is." }), nieuw, busNoot));
+    const lijstKaart = kaart("Gegeven lessen");
+    h.append(lijstKaart);
+    let bewaard = [];
+    try { bewaard = (await bewaardeLessen()).lijst; } catch (_) { return lijstKaart.append(el("p", { class: "empty", text: "Opslag op dit toestel is niet te lezen." })); }
+    if (t !== teller || stap !== "lijst") return;
+    if (!bewaard.length) return lijstKaart.append(el("p", { class: "empty", text: groep.bus ? "Nog geen lessen bewaard op dit toestel." : "Geen bewaarde lessen." }));
+    const ul = el("ul", { class: "glist leslijst" });
+    for (const x of [...bewaard].sort((a, b) => Date.parse(b.gemaakt) - Date.parse(a.gemaakt))) {
+      const inMem = geheugen.get(x.id);
+      const regel = el("button", { type: "button", class: "g", ...(inMem ? {} : { disabled: "" }) },
+        el("span", { class: "code", text: datumTijd(x.gemaakt) }), el("span", { class: "nm", text: String(x.naam || "") }),
+        el("small", { text: [x.omschrijving, meervoud(Number(x.aantal) || 0, "aanwezig", "aanwezig"), x.ingeleverd ? "ingeleverd" : "nog niet ingeleverd"].filter(Boolean).join(" · ") }));
+      if (inMem) regel.addEventListener("click", () => { einde = { inhoud: inMem, bewaard: true }; naar("einde"); });
+      const weg = knop("verwijderen", () => verwijder(x), "linkish");
+      ul.append(el("li", null, regel, weg));
+    }
+    lijstKaart.append(ul, el("p", { class: "note", text: "Tik op een les om het overzicht nog eens te zien. Dat kan tot je vergrendelt; daarna staat de les alleen versleuteld op dit toestel (alleen Beheer kan hem openen)." }));
+    const open = bewaard.filter((x) => !x.ingeleverd);
+    lijstKaart.append(knop(open.length ? "Lessen inleveren (" + open.length + " nieuw)" : "Alle lessen opnieuw inleveren", () => inleveren(open.length ? open : bewaard), "btn" + (open.length ? "" : " sec"), { id: "btnLesIn" }));
+  }
+
+  async function verwijder(x) {
+    if (!confirm("Les “" + x.naam + "” van " + datumTijd(x.gemaakt) + " van dit toestel verwijderen?" + (x.ingeleverd ? "" : " Hij is nog niet ingeleverd."))) return;
+    try { await zetLessen(groep.code, (await bewaardeLessen()).lijst.filter((y) => y.id !== x.id)); }
+    catch (_) { return msg(melding(), "Opslaan op dit toestel is mislukt."); }
+    geheugen = new Map([...geheugen].filter(([id]) => id !== x.id));
+    teken();
+  }
+
+  async function inleveren(items) {
+    const code = groep.code, t = teller;
+    let uit;
+    try { uit = Les.maakUit(code, items.map((x) => x.bestand)); } catch (e) { return msg(melding(), e.message); }
+    const nu = new Date(), naam = code + "_Lessen_" + Basis.datumNu(nu) + "_" + tweeCijfers(nu.getHours()) + tweeCijfers(nu.getMinutes()) + ".mptl";
+    const uitkomst = await Basis.geefBestand(naam, JSON.stringify(uit));
+    if (t !== teller) return;
+    if (uitkomst === "gestopt") return;
+    try {
+      const ids = new Set(items.map((x) => x.id));
+      await zetLessen(code, (await bewaardeLessen()).lijst.map((x) => (ids.has(x.id) ? { ...x, ingeleverd: true } : x)));
+    } catch (_) { /* bestand is gemaakt; alleen het vinkje "ingeleverd" kon niet bewaard worden */ }
+    if (t !== teller) return;
+    await tekenLijstOpnieuw();
+    msg(melding(), (uitkomst === "gedeeld" ? "Gedeeld: " : "Bestand gemaakt: ") + naam + ". Lees het in op het dashboard (Bestanden inlezen).", "ok");
+  }
+  async function tekenLijstOpnieuw() { stap = "lijst"; teken(); }
+
+  // Stap 1: les kiezen uit alle lessen van het rooster, of zelf een naam typen.
+  function tekenKies(h) {
+    h.append(knop("‹ Les", () => naar("lijst"), "back"));
+    const lessen = Object.entries((groep.rooster && groep.rooster.lessen) || {}).filter(([, L]) => L && typeof L === "object").sort((a, b) => natuurlijk(a[0], b[0]));
+    const vrij = invoer("", { id: "lesVrij", name: "search-lesnaam", maxlength: "120", placeholder: "Naam van de les" });
+    const verder = () => { const n = vrij.value.trim(); if (!n) return msg(melding(), "Typ een naam voor de les."); kiesLes({ nr: "", d: "", naam: n }); };
+    vrij.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); verder(); } });
+    const vrijKaart = kaart(lessen.length ? "Staat de les er niet in?" : "Les", el("div", { class: "rij2" }, vrij, knop("Verder", verder, "btn")));
+    if (!lessen.length) {
+      h.append(kaart("Kies de les", el("p", { class: "empty", text: groep.rooster ? "Het rooster van deze groep bevat geen lessen." : "Geen rooster op dit toestel voor deze groep. Typ de naam van de les." })), vrijKaart);
+      return;
+    }
+    const zoek = invoer(filter.q, { id: "lesZoek", name: "search-leszoek", placeholder: "Zoek op naam of nummer", "aria-label": "Zoek een les" });
+    const disciplines = [...new Set(lessen.map(([, L]) => String(L.d || "").trim()).filter(Boolean))].sort(natuurlijk);
+    const chips = el("div", { class: "chips", role: "group", "aria-label": "Discipline" });
+    for (const d of ["", ...disciplines]) {
+      const b = knop(d || "Alle", () => { filter = { ...filter, d }; teken(); }, "", { "aria-pressed": String(filter.d === d) });
+      chips.append(b);
+    }
+    const ul = el("ul", { class: "hits leskeuze" });
+    const vul = () => {
+      ul.textContent = "";
+      const q = filter.q.trim().toLowerCase();
+      const passend = lessen.filter(([nr, L]) => (!filter.d || String(L.d || "").trim() === filter.d)
+        && (!q || nr.toLowerCase().includes(q) || String(L.les || "").toLowerCase().includes(q) || String(L.d || "").toLowerCase().includes(q)));
+      for (const [nr, L] of passend) {
+        const meta = [L.zone, L.km, L.opdr].filter(Boolean).join(" · ");
+        const b = el("button", { type: "button" }, el("b", { text: nr + "  " + String(L.les || L.d || "") }), el("small", { text: [L.d, meta].filter(Boolean).join(" · ") }));
+        b.addEventListener("click", () => kiesLes({ nr, d: String(L.d || ""), naam: String(L.les || L.d || "Les " + nr), km: L.km }));
+        ul.append(el("li", null, b));
+      }
+      if (!passend.length) ul.append(el("li", null, el("p", { class: "empty", text: "Geen les gevonden." })));
+    };
+    zoek.addEventListener("input", () => { filter = { ...filter, q: zoek.value }; vul(); });
+    vul();
+    h.append(kaart("Kies de les", el("p", { class: "muted small", style: "margin-top:0", text: meervoud(lessen.length, "les", "lessen") + " uit het rooster." }), zoek, disciplines.length > 1 ? chips : null, ul), vrijKaart);
+  }
+
+  const roosterLes = (nr) => (nr && groep.rooster && groep.rooster.lessen && typeof groep.rooster.lessen[nr] === "object" ? groep.rooster.lessen[nr] : null);
+  const tekstGetal = (x) => (x === null || x === undefined ? "" : String(x).replace(".", ","));
+  // Les gekozen: onderdelen voorinvullen uit Zone, Km en Opdracht van de les (Les.voorstel). Niets gevonden: hardlopen niet aan.
+  function kiesLes(gekozen) {
+    les = { nr: gekozen.nr, d: gekozen.d, naam: gekozen.naam };
+    const v = Les.voorstel(roosterLes(gekozen.nr) || { d: gekozen.d, les: gekozen.naam });
+    const soort = Les.invoerSoort(gekozen.d, !gekozen.nr);
+    aan = soort === "vast" ? v.aan : soort === "kies" ? { ...v.aan, loop: v.aan.loop && v.loop !== null } : { loop: false, kracht: false, speedmars: false };
+    const inv = groep.uitslagen ? groep.uitslagen.invoer : {};
+    const oef = groep.uitslagen ? groep.uitslagen.oefeningen() : [];
+    const standaardOef = oef.find((k) => k.r === Number(inv.B36)) || oef[0];
+    regels = {
+      // niets gevonden: leeg laten (leeg = alleen aanwezigheid), niet een standaard die op een andere les slaat
+      loop: [v.loop ? { m: tekstGetal(v.loop.m), pct: tekstGetal(v.loop.pct) } : soort === "vast" ? { m: "", pct: "" } : { m: String(inv.B51 ?? 400), pct: String(inv.E51 ?? 80) }],
+      kracht: [{ naam: standaardOef ? standaardOef.naam : "", pct: "80" }],
+      speedmars: [{ kg: String(inv.B78 ?? 15), km: tekstGetal(v.speedmarsKm ?? inv.B86 ?? 9) }]
+    };
+    naar(soort === "geen" ? "aanwezig" : "details");   // zwemmen, MMA …: geen doelen, meteen de aanwezigen
+  }
+
+  // Stap 2: wat zit er in de les.
+  function tekenDetails(h) {
+    h.append(knop("‹ Andere les", () => naar("kies"), "back"));
+    const kop = kaart(les.naam, el("p", { class: "muted small", style: "margin-top:0", text: [les.nr ? "Les " + les.nr : "Eigen les", les.d].filter(Boolean).join(" · ") }));
+    const L = roosterLes(les.nr);
+    if (L) {   // wat het rooster over de les zegt (FTS-overzicht D, E, F en Toelichting)
+      const rijen = el("div", { class: "lesinfo" });
+      for (const [k, w] of [["Zone / intensiteit", L.zone], ["Km totaal", L.km], ["Opdracht", L.opdr]]) if (w) rijen.append(el("div", null, el("span", { text: k }), el("b", { text: String(w) })));
+      if (rijen.children.length) kop.append(rijen);
+      if (L.uitleg) kop.append(el("details", { class: "uitleg" }, el("summary", { text: "Toelichting" }), el("p", { text: String(L.uitleg).slice(0, 2000) })));
+    }
+    if (Les.invoerSoort(les.d, !les.nr) === "kies") {   // alleen bij COMBI of een eigen les: zelf kiezen wat erin zit
+      const chips = el("div", { class: "chips", role: "group", "aria-label": "Onderdelen" });
+      for (const s of Object.keys(NAAM_ONDERDEEL)) chips.append(knop(NAAM_ONDERDEEL[s], () => { leesDetails(); aan = { ...aan, [s]: !aan[s] }; teken(); bewaarConcept(); }, "", { "aria-pressed": String(aan[s]) }));
+      kop.append(el("h3", { text: "Wat zit er in de les?" }), chips, el("p", { class: "note", text: "Zet aan wat erin zit. Niets aan: alleen aanwezigheid." }));
+    } else kop.append(el("p", { class: "note", text: "Voorgevuld uit zone, km en opdracht van de les; pas aan waar nodig. Leeg laten: alleen aanwezigheid." }));
+    h.append(kop);
+    if (aan.loop) h.append(onderdeelKaart("loop", [["m", "Afstand (m)"], ["pct", "%"]]));
+    if (aan.kracht) h.append(onderdeelKaart("kracht", [["naam", "Oefening"], ["pct", "% van 1RM"]]));
+    if (aan.speedmars) h.append(onderdeelKaart("speedmars", [["kg", "Bepakking (kg)"], ["km", "Afstand (km)"]]));
+    h.append(knop("Verder: wie is er?", () => { if (gelezenOnderdelen()) naar("aanwezig"); }, "btn", { id: "btnLesVerder" }));
+  }
+
+  function onderdeelKaart(s, velden) {
+    const k = kaart(NAAM_ONDERDEEL[s]);
+    const oef = groep.uitslagen ? groep.uitslagen.oefeningen() : [];
+    regels[s].forEach((r, i) => {
+      const rij = el("div", { class: "lesregel", "data-soort": s, "data-i": String(i) });
+      for (const [veld, label] of velden) {
+        let input;
+        if (veld === "naam") {
+          input = el("select", { class: "fill", "data-veld": veld, "aria-label": label });
+          for (const o of oef) input.append(el("option", { value: o.naam, text: o.naam }));
+          if (!oef.length) input.append(el("option", { value: "", text: "Geen oefeningen in het groepsbestand" }));
+          input.value = r.naam;
+        } else input = invoer(r[veld], { inputmode: "decimal", "data-veld": veld, "aria-label": label, name: "search-" + s + veld });
+        input.addEventListener("change", () => { leesDetails(); bewaarConcept(); });
+        rij.append(el("label", { class: "lesveld" }, el("span", { text: label }), input));
+      }
+      if (regels[s].length > 1) rij.append(knop("×", () => { leesDetails(); regels = { ...regels, [s]: regels[s].filter((_, j) => j !== i) }; teken(); }, "lesweg", { "aria-label": "Regel weghalen" }));
+      k.append(rij);
+    });
+    if (s === "speedmars") k.append(el("p", { class: "note", text: "Speedmars is voor iedereen gelijk: de doeltijd staat bovenaan het overzicht." }));
+    if (s === "loop") k.append(el("p", { class: "note", text: "% van de 1000m-tijd tot 5 km, van de 5 km-tijd vanaf 5 km (zoals de Excel)." }));
+    if (regels[s].length < Les.MAX_REGELS) k.append(knop("+ regel erbij", () => { leesDetails(); regels = { ...regels, [s]: [...regels[s], { ...regels[s][regels[s].length - 1] }] }; teken(); }, "linkish"));
+    return k;
+  }
+
+  /** Invoer van het scherm terug in `regels` (nieuwe objecten). */
+  function leesDetails() {
+    const nieuw = { loop: [...regels.loop], kracht: [...regels.kracht], speedmars: [...regels.speedmars] };
+    for (const rij of host().querySelectorAll(".lesregel")) {
+      const s = rij.dataset.soort, i = Number(rij.dataset.i), r = { ...nieuw[s][i] };
+      for (const veld of rij.querySelectorAll("[data-veld]")) r[veld.dataset.veld] = veld.value;
+      nieuw[s][i] = r;
+    }
+    regels = nieuw;
+  }
+  /** De onderdelen als getallen, gecontroleerd; null (met melding) als er iets niet klopt. */
+  function gelezenOnderdelen() {
+    if (stap === "details") leesDetails();
+    const g = Les.leesGetal;
+    const gevuld = (r, velden) => velden.some((v) => String(r[v] ?? "").trim());   // een helemaal lege regel telt niet mee
+    const o = { loop: aan.loop ? regels.loop.filter((r) => gevuld(r, ["m", "pct"])).map((r) => ({ m: g(r.m), pct: g(r.pct) })) : [],
+      kracht: aan.kracht ? regels.kracht.filter((r) => gevuld(r, ["pct"])).map((r) => ({ naam: r.naam, pct: g(r.pct) })) : [],
+      speedmars: aan.speedmars ? regels.speedmars.filter((r) => gevuld(r, ["kg", "km"])).map((r) => ({ kg: g(r.kg), km: g(r.km) })) : [] };
+    try { return Les.controleerOnderdelen(o); } catch (e) { msg(melding(), e.message); return null; }
+  }
+
+  // Stap 3: wie is er.
+  function tekenAanwezig(h) {
+    const zonderInvoer = Les.invoerSoort(les.d, !les.nr) === "geen";
+    h.append(zonderInvoer ? knop("‹ Andere les", () => naar("kies"), "back") : knop("‹ Onderdelen", () => naar("details"), "back"));
+    const veld = invoer("", { id: "lesVnr", name: "search-lesvnr", inputmode: "numeric", maxlength: "20", placeholder: "V-nummer", "aria-label": "V-nummer" });
+    const voegToe = () => {
+      const v = Les.geldigVnr(veld.value);
+      if (!v) return msg(melding(), "Een V-nummer bestaat uit 3 tot 10 cijfers.");
+      if (aanwezig.includes(v)) { veld.value = ""; return msg(melding(), v + " staat er al.", "ok"); }
+      if (aanwezig.length >= Les.MAX_AANWEZIG) return msg(melding(), "Maximaal " + Les.MAX_AANWEZIG + " aanwezigen.");
+      aanwezig = [...aanwezig, v];
+      teken(); bewaarConcept();
+      const bekend = groep.uitslagen && groep.uitslagen.zoek(v);
+      if (!bekend) msg(melding(), v + " staat niet in het groepsbestand. Toegevoegd; doelen zijn er niet voor.");
+      setTimeout(() => { const n = $("#lesVnr"); if (n) n.focus(); }, 30);
+    };
+    veld.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); voegToe(); } });
+    const leden = groep.uitslagen ? groep.uitslagen.leden() : [];
+    const zet = (nieuw) => { aanwezig = nieuw.slice(0, Les.MAX_AANWEZIG); teken(); bewaarConcept(); };
+    // Knop Groep: de V-nummers uit het groepsbestand om aan te vinken (aangevinkt = aanwezig).
+    const groepKnop = leden.length ? knop((groepOpen ? "Lijst sluiten" : "Groep") + " (" + leden.length + ")", () => {
+      groepOpen = !groepOpen; teken();
+      // Op een telefoon valt de lijst onder de vouw: er naartoe schuiven, anders lijkt de knop niets te doen.
+      const k = groepOpen && document.querySelector("#gViewLes .lesgroep");
+      if (k && k.closest(".card").scrollIntoView) k.closest(".card").scrollIntoView({ block: "start", behavior: "smooth" });
+    }, "btn sec", { id: "btnLesGroep", "aria-expanded": String(groepOpen) }) : null;
+    let vinkKaart = null;
+    if (groepOpen && leden.length) {
+      const raster = el("div", { class: "lesgroep", role: "group", "aria-label": "Aanwezig aanvinken" });
+      for (const v of leden) {
+        const is = aanwezig.includes(v);
+        raster.append(knop(el("span", { class: "vink", "aria-hidden": "true", text: is ? "✓" : "" }), () => zet(is ? aanwezig.filter((x) => x !== v) : [...aanwezig, v]), "lesvink", { "aria-pressed": String(is), "data-vnr": v }));
+        raster.lastChild.append(v);
+      }
+      const inGroep = aanwezig.filter((v) => leden.includes(v)).length;
+      vinkKaart = kaart("Groep · " + inGroep + " van " + leden.length + " aanwezig",
+        el("div", { class: "lesgroepknoppen" },
+          knop("Iedereen aanwezig", () => zet([...new Set([...aanwezig, ...leden])]), "btn sec", { id: "btnLesIedereen" }),
+          knop("Niemand", () => zet(aanwezig.filter((v) => !leden.includes(v))), "btn sec", { id: "btnLesNiemand" })),
+        raster, el("p", { class: "note", text: "Tik op een V-nummer om het aan of uit te vinken. Iemand die niet in de lijst staat: typ het V-nummer hierboven." }));
+    }
+    const lijst = el("div", { class: "chips lesaanwezig", role: "list" });
+    for (const v of [...aanwezig].filter((x) => !(groepOpen && leden.includes(x))).sort(natuurlijk)) {
+      const bekend = groep.uitslagen && groep.uitslagen.zoek(v);
+      lijst.append(knop(v + "  ×", () => { aanwezig = aanwezig.filter((x) => x !== v); teken(); bewaarConcept(); }, bekend ? "" : "onbekend", { role: "listitem", "aria-label": v + " weghalen" + (bekend ? "" : " (niet in groepsbestand)") }));
+    }
+    const losse = lijst.children.length;
+    h.append(kaart("Wie is er? (" + aanwezig.length + ")", el("p", { class: "muted small", style: "margin-top:0", text: les.naam }),
+      groepKnop,
+      el("div", { class: "rij2", style: groepKnop ? "margin-top:12px" : null }, veld, knop("Toevoegen", voegToe, "btn", { id: "btnLesToe" })),
+      losse ? lijst : aanwezig.length ? null : el("p", { class: "empty", text: leden.length ? "Nog niemand. Druk op Groep om aan te vinken, of typ een V-nummer." : "Nog niemand. Typ een V-nummer en druk op Toevoegen." }),
+      losse ? el("p", { class: "note", text: "Tik op een V-nummer om het weg te halen." }) : null));
+    if (vinkKaart) h.append(vinkKaart);
+    h.append(knop("Tijden tonen", toonTijden, "btn", { id: "btnLesTijden" }));
+    // Zonder groepslijst meteen typen; met lijst niet (anders schuift het toetsenbord over de lijst).
+    setTimeout(() => { if (stap === "aanwezig" && !aanwezig.length && !leden.length) { const n = $("#lesVnr"); if (n) n.focus(); } }, 30);
+  }
+
+  /** Tijden tonen: het overzicht per V-nummer om de les mee te geven. Nog niet bewaard; dat doet Einde. */
+  function toonTijden() {
+    const onderdelen = gelezenOnderdelen();
+    if (!onderdelen) return;
+    let inhoud;
+    try { inhoud = Les.maakInhoud({ code: groep.code, les, onderdelen, aanwezig }); } catch (e) { return msg(melding(), e.message); }
+    einde = { inhoud, bewaard: false };
+    naar("einde");
+  }
+
+  /** Einde: de les is gegeven. Bewaren (met brievenbus) en terug naar de lijst. */
+  async function opEinde() {
+    if (!einde || einde.bewaard) return;
+    const inhoud = einde.inhoud;
+    const t = teller, k = $("#btnLesEinde");
+    busy(k, true, "Bewaren…");
+    let bewaard = false, fout = "";
+    if (groep.bus) {
+      try {
+        const bestand = await Brievenbus.versleutelVoorBus(inhoud, groep.bus.publiek, groep.code, inhoud.gemaakt);
+        if (t !== teller) return;
+        const lijst = (await bewaardeLessen()).lijst;
+        if (lijst.length >= MAX_BEWAARD) throw new Les.LesFout("Er staan al " + MAX_BEWAARD + " lessen op dit toestel. Verwijder ingeleverde lessen.");
+        await zetLessen(groep.code, [...lijst, { id: inhoud.id, gemaakt: inhoud.gemaakt, naam: inhoud.les.naam, omschrijving: Les.omschrijving(inhoud.onderdelen), aantal: inhoud.aanwezig.length, ingeleverd: false, bestand }]);
+        bewaard = true;
+      } catch (e) { fout = e instanceof Les.LesFout ? e.message : "Bewaren op dit toestel is mislukt."; }
+    }
+    if (t !== teller) return;
+    if (fout) { busy(k, false, "Einde"); return msg(melding(), fout + " Probeer Einde opnieuw."); }
+    geheugen = new Map([...geheugen, [inhoud.id, inhoud]]);
+    einde = null; aanwezig = []; les = null;
+    naar("lijst");
+    if (bewaard) msg(melding(), "Les bewaard: " + inhoud.les.naam + " (" + meervoud(inhoud.aanwezig.length, "aanwezige", "aanwezigen") + "). Tik erop om de tijden nog eens te zien; lever in via Lessen inleveren.", "ok");
+    else msg(melding(), "Les afgesloten, maar niet bewaard: het brievenbus-bestand van deze groep staat niet open op dit toestel.");
+  }
+
+  /** Komt (een deel van) de waarden uit een eerdere test? Dan de datum erbij, zoals bij Persoon. */
+  function oudeTest(p) {
+    try {
+      const sv = groep.uitslagen.samenvatting(p);
+      if (sv.terugval) return " test " + (sv.testdatum || "eerder");
+      if (sv.deels && sv.deels.length) return " deels " + sv.deels.join(", ");
+    } catch (_) { return ""; }
+    return "";
+  }
+
+  // Stap 4: overzicht per V-nummer.
+  function tekenEinde(h) {
+    const { inhoud, bewaard } = einde, o = inhoud.onderdelen;
+    h.append(bewaard ? knop("‹ Les", () => { einde = null; naar("lijst"); }, "back") : knop("‹ Wie is er?", () => { einde = null; naar("aanwezig"); }, "back"));
+    const sub = [datumTijd(inhoud.gemaakt), Les.omschrijving(o), meervoud(inhoud.aanwezig.length, "aanwezig", "aanwezig")].filter(Boolean).join(" · ");
+    h.append(kaart(inhoud.les.naam, el("p", { class: "muted small", style: "margin-top:0", text: sub }),
+      el("p", { class: "note", text: bewaard ? "Bewaard op dit toestel (versleuteld voor de brievenbus). Lever in via Les › Lessen inleveren." : "Geef hiermee de les. Druk op Einde als de les klaar is; dan wordt hij bewaard." })));
+    if (o.speedmars.length) {
+      const sm = el("div", { class: "out" });
+      for (const r of o.speedmars) {
+        const d = Les.speedmarsDoel(groep.uitslagen ? groep.uitslagen.bepakking : [], r);
+        sm.append(el("span", { text: String(r.km).replace(".", ",") + " km met " + String(r.kg).replace(".", ",") + " kg" + (d.cat ? " (" + d.cat + ")" : "") }), el("b", { text: d.tijd + " · " + d.pace }));
+      }
+      h.append(el("div", { class: "card uitslag" }, el("h2", { text: "Speedmars (voor iedereen)" }), sm));
+    }
+    const kolommen = [...o.loop.map((r) => String(r.m) + " m · " + String(r.pct).replace(".", ",") + "%"), ...o.kracht.map((r) => r.naam + " · " + String(r.pct).replace(".", ",") + "%")];
+    const tabel = el("table", { class: "ronden lestabel" });
+    tabel.append(el("thead", null, el("tr", null, el("th", { text: "V-nummer" }), ...kolommen.map((k) => el("th", { text: k })))));
+    const body = el("tbody");
+    let onbekend = 0;
+    const mist = new Map();   // wat ontbreekt -> aantal personen
+    for (const v of inhoud.aanwezig) {
+      const p = groep.uitslagen ? groep.uitslagen.zoek(v) : null;
+      if (!p) onbekend++;
+      let d;
+      try {
+        const w = p ? groep.uitslagen.lesWaarden(p) : null;
+        d = Les.doelen(w, o);
+        if (p) for (const x of Les.ontbreekt(w, o)) mist.set(x, (mist.get(x) || 0) + 1);
+      } catch (_) { d = { loop: o.loop.map(() => "–"), kracht: o.kracht.map(() => "–") }; }
+      body.append(el("tr", null, el("td", null, el("b", { text: v }), el("small", { class: "lesonbekend", text: p ? oudeTest(p) : " niet in groepsbestand" })), ...[...d.loop, ...d.kracht].map((x) => el("td", { text: x }))));
+    }
+    tabel.append(body);
+    h.append(kaart(kolommen.length ? "Doelen per V-nummer" : "Aanwezig", el("div", { class: "tablewrap" }, tabel),
+      kolommen.length ? el("p", { class: "note", text: "Uit het groepsbestand van " + ((groep.uitslagen && groep.uitslagen.gemaakt) || "?") + ": looptijd tot 5 km uit de 1000m-tijd, vanaf 5 km uit de 5 km-tijd (zoals de Excel); kg uit 1RM. Staat er \u201ctest\u201d met een datum bij, dan komt de waarde uit een eerdere test." + (onbekend ? " – = geen gegevens." : "") }) : null,
+      mist.size ? el("p", { class: "note lesmist", text: "– = ontbreekt in het groepsbestand: " + [...mist].map(([x, n]) => x + " (" + meervoud(n, "persoon", "personen") + ")").join(", ") + "." + (mist.has("5 km-tijd") ? " Afstanden vanaf 5 km rekenen met de 5 km-tijd." : "") }) : null));
+    h.append(bewaard ? knop("Klaar", () => { einde = null; naar("lijst"); }, "btn sec", { id: "btnLesKlaar" }) : knop("Einde", opEinde, "btn", { id: "btnLesEinde" }));
+  }
+
+  /* ---------- in en uit ---------- */
+  /** Tabblad Les openen voor deze groep (van Groepen). Begint op de lijst, of op de les die nog liep (concept). */
+  async function start(g) {
+    teller++;
+    const t = teller;
+    groep = g; stap = "lijst"; filter = { q: "", d: "" }; einde = null; les = null; aanwezig = [];
+    teken();
+    let hersteld = false;
+    try { hersteld = await herstelConcept(g.code); } catch (_) { hersteld = false; }
+    if (t !== teller) return;
+    if (!hersteld) return;
+    teken();
+    msg(melding(), stap === "einde" ? "De tijden van de les staan weer klaar. Druk op Einde als de les klaar is." : "De les van daarnet is hersteld. Ga verder waar je was.", "ok");
+  }
+  /** Voor Groepen (verwijderen/wissen): aantal bewaarde lessen dat nog niet is ingeleverd, voor één code of (null) alle. */
+  async function nietIngeleverd(code) {
+    const alle = (await opslag.get(KV_LESSEN)) || {};
+    return Object.entries(alle && typeof alle === "object" ? alle : {}).filter(([c]) => code === null || c === code)
+      .reduce((n, [, l]) => n + (Array.isArray(l) ? l.filter((x) => x && !x.ingeleverd).length : 0), 0);
+  }
+  /** Groep verwijderd: ook zijn lessen en concept weg. */
+  async function wisGroep(code) {
+    const alle = (await opslag.get(KV_LESSEN)) || {};
+    const rest = Object.fromEntries(Object.entries(alle && typeof alle === "object" ? alle : {}).filter(([c]) => c !== code));
+    await opslag.setAlles({ [KV_LESSEN]: rest, [kvConcept(code)]: null });
+  }
+  /** Staat er (bij het openen) een lopende les voor deze groep? Dan opent Groepen meteen op Les. */
+  const heeftConcept = (code) => metConcept.has(code);
+  /** Tabblad dicht (andere tab, andere groep, vergrendelen): alles uit beeld en uit geheugen. */
+  function sluit() {
+    teller++;
+    groep = null; stap = "lijst"; les = null; aanwezig = []; einde = null; groepOpen = false;
+    aan = { loop: false, kracht: false, speedmars: false }; regels = { loop: [], kracht: [], speedmars: [] }; filter = { q: "", d: "" };
+    const h = host(); if (h) h.textContent = "";
+  }
+  /** Vergrendelen: ook de lessen van deze sessie uit het geheugen. */
+  function vergrendel() { sluit(); geheugen = new Map(); sleutels = new Map(); metConcept = new Set(); }
+
+  /** Is er een les bezig die nog niet met Einde is afgesloten (en waar al iets in staat)? */
+  // Met conceptsleutel gaat er niets verloren (het concept komt terug); zonder: bevestiging vragen.
+  const heeftInvoer = () => Boolean(groep) && !sleutels.has(groep.code) && (stap === "details" || stap === "aanwezig") && (aanwezig.length > 0 || stap === "aanwezig");
+
+  root.LesScherm = Object.freeze({ start, sluit, vergrendel, heeftInvoer, sleutel, heeftConcept, nietIngeleverd, wisGroep });
+})(globalThis);
+
+"use strict";
+/*
+ * Opslag van de instructeurs op deze pc (IndexedDB "mpt-log-beheer"), gedeeld door de instructeurs-pagina en het dashboard.
+ * Alles in de opslag is versleuteld: sleutelbestanden met het instructeurswachtwoord, logs en plan voor de brievenbus,
+ * het bestand voor de mariniers met het groepswachtwoord. Ontsleuteld wordt alleen in geheugen.
+ * Beide pagina's lezen altijd opnieuw wat er op de pc staat: een ander venster (of de andere pagina) kan intussen iets hebben gewijzigd.
+ */
+(function (root) {
+  const { Basis, Kluis, Logboek, Brievenbus, Overzicht } = root;
+  const KV_BUSSEN = "bussen";                          // { code: sleutelbestand } - privésleutel versleuteld
+  const kvLogs = (code) => "logs:" + code;             // [logbestand, ...] - versleuteld voor de brievenbus
+  const kvRooster = (code) => "rooster:" + code;       // plan uit het rooster - versleuteld voor de brievenbus
+  const kvGroep = (code) => "groep:" + code;           // bestand voor de mariniers - versleuteld met het groepswachtwoord
+  const kvLeden = (code) => "leden:" + code;           // ledenlijst (alleen V-nummers, uit het groepsbestand) - versleuteld voor de brievenbus
+  const kvLessen = (code) => "lessen:" + code;         // [les, ...] gegeven lessen met aanwezigen (van de tablet) - elk versleuteld voor de brievenbus
+  const opslag = Basis.maakOpslag("mpt-log-beheer");
+
+  const codeLabel = (code) => (code ? "Groep " + code : "Groep zonder code");
+  const isLesFout = (e) => Boolean(root.Les) && e instanceof root.Les.LesFout;
+  const foutTekst = (e) => (e instanceof Brievenbus.BusFout || e instanceof Kluis.KluisFout || e instanceof Overzicht.OverzichtFout || e instanceof Logboek.LogFout || e instanceof Logboek.RoosterFout || isLesFout(e) ? e.message : "Er ging iets mis. Probeer het opnieuw.");
+  const isZelfdeBestand = (a, b) => ["publiek", "salt", "iv", "data", "gemaakt"].every((veld) => a[veld] === b[veld]);
+
+  // Een beschadigde regel (geen object) wordt overgeslagen, anders blijft de hele pagina leeg.
+  const alleenGeldig = (alle) => Object.fromEntries(Object.entries(alle && typeof alle === "object" ? alle : {}).filter(([, w]) => w && typeof w === "object"));
+  const bewaardeBussen = async () => alleenGeldig(await opslag.get(KV_BUSSEN));
+  /** Sleutelbestand bewaren naast wat er al staat. Andere brievenbus: het bewaarde bestand voor de mariniers hoort er dan niet meer bij. */
+  async function bewaarBus(sleutelBestand, isAndereBus) {
+    const bijgewerkt = { ...(await bewaardeBussen()), [sleutelBestand.code]: sleutelBestand };
+    await opslag.setAlles({ [KV_BUSSEN]: bijgewerkt, ...(isAndereBus ? { [kvGroep(sleutelBestand.code)]: null } : {}) });
+    return bijgewerkt;
+  }
+
+  async function leesLogs(bus, code, bestanden) {
+    const gelezen = [], onleesbaar = [];
+    for (const bestand of bestanden) {
+      try { gelezen.push({ bestand, inhoud: Overzicht.controleerInhoud(await Brievenbus.openLogBestand(bestand, bus), code, Date.now()) }); }
+      catch (e) { if (e instanceof Brievenbus.BusFout) onleesbaar.push(bestand); }   // voor een andere brievenbus: bewaren maar niet tonen; ongeldige inhoud vervalt
+    }
+    const nieuwste = Overzicht.nieuwstePerPersoon(gelezen.map((g) => g.inhoud));
+    const geldend = gelezen.filter((g) => nieuwste.includes(g.inhoud));
+    return { inhouden: nieuwste, bestanden: geldend.map((g) => g.bestand), bestandVan: new Map(geldend.map((g) => [g.inhoud.vnr, g.bestand])), onleesbaar };
+  }
+  const bewaardeLijst = async (code) => { const l = await opslag.get(kvLogs(code)); return Array.isArray(l) ? l : []; };
+  /** De logs zoals ze nu op de pc staan, plus eventueel nieuwe. */
+  async function bewaardeLogs(bus, code, extra) {
+    return leesLogs(bus, code, [...(await bewaardeLijst(code)), ...extra]);
+  }
+  const bewaarLogs = (code, gelezen) => opslag.setAlles({ [kvLogs(code)]: [...gelezen.onleesbaar, ...gelezen.bestanden] });
+  async function leesPlan(bus, code) {
+    const bewaard = await opslag.get(kvRooster(code));
+    if (!bewaard) return null;
+    try { return Overzicht.controleerPlan(await Brievenbus.openLogBestand(bewaard, bus)); }
+    catch (_) { return null; }   // van een andere brievenbus: opnieuw inlezen
+  }
+  /** Plan bewaren, versleuteld voor de brievenbus zelf: daarna volstaat het instructeurswachtwoord. */
+  async function bewaarPlan(code, bus, plan) {
+    await opslag.setAlles({ [kvRooster(code)]: await Brievenbus.versleutelVoorBus(plan, bus.publiek, code, new Date().toISOString()) });
+  }
+  /** Ledenlijst van de groep (V-nummers) of null. Van een andere brievenbus of beschadigd: null (opnieuw inlezen). */
+  async function leesLeden(bus, code) {
+    const bewaard = await opslag.get(kvLeden(code));
+    if (!bewaard || !root.Dashboard) return null;
+    try { return (await leesLedenMetDatum(bus, bewaard)).leden; } catch (_) { return null; }
+  }
+  /** Ledenlijst plus de datum van het groepsbestand waar hij uit kwam (om een ouder bestand niet over een nieuwer te zetten). */
+  async function leesLedenMetDatum(bus, bewaard) {
+    const l = await Brievenbus.openLogBestand(bewaard, bus);
+    return { leden: root.Dashboard.controleerLeden(l && l.leden), gemaakt: l && typeof l.gemaakt === "string" ? l.gemaakt : "" };
+  }
+  /* ---------- gegeven lessen (aanwezigheid, van de tablet) ---------- */
+  const bewaardeLessen = async (code) => { const l = await opslag.get(kvLessen(code)); return Array.isArray(l) ? l.filter((w) => w && typeof w === "object") : []; };
+  /** Lessen openen en controleren; per les (id) één keer. Van een andere brievenbus: bewaren maar niet tonen. */
+  async function leesLessen(bus, code, bestanden) {
+    const gelezen = [], onleesbaar = [];
+    if (!root.Les) return { lessen: [], bestanden: [], bestandVan: new Map(), onleesbaar: bestanden };
+    for (const bestand of bestanden) {
+      try { gelezen.push({ bestand, les: root.Les.controleerInhoud(await Brievenbus.openLogBestand(bestand, bus), code, Date.now()) }); }
+      catch (e) { if (e instanceof Brievenbus.BusFout) onleesbaar.push(bestand); }
+    }
+    const lessen = root.Les.uniek(gelezen.map((g) => g.les));
+    const geldend = gelezen.filter((g) => lessen.includes(g.les));
+    return { lessen, bestanden: geldend.map((g) => g.bestand), bestandVan: new Map(geldend.map((g) => [g.les.id, g.bestand])), onleesbaar };
+  }
+  /**
+   * Lessenbestanden ([{ naam, w }], van de tablet) van een geopende groep controleren en bewaren naast wat er al staat.
+   * Een les die er al staat (zelfde id) telt één keer.
+   */
+  async function lessenErbij(geladen, items) {
+    if (!zelfdeBus(geladen.code, geladen.bus)) throw new Overzicht.OverzichtFout(VERVANGEN);
+    const goed = [], geweigerd = [];
+    for (const { naam, w } of items) {
+      try {
+        if (w.code !== geladen.code) throw new Overzicht.OverzichtFout("Dit lessenbestand is van een andere groep (" + codeLabel(w.code) + ").");
+        const lessen = [];
+        for (const bestand of w.lessen) {
+          let x;
+          try { x = await Brievenbus.openLogBestand(bestand, geladen.bus); }
+          catch (e) { if (e instanceof Brievenbus.BusFout) throw new Overzicht.OverzichtFout("Deze lessen zijn voor een andere (oudere of nieuwere) brievenbus gemaakt dan die op deze pc. Laat de tablet het brievenbus-bestand van deze groep opnieuw importeren."); throw e; }
+          lessen.push({ bestand, les: root.Les.controleerInhoud(x, geladen.code, Date.now()) });
+        }
+        goed.push(...lessen);
+      } catch (e) { geweigerd.push(naam + ": " + foutTekst(e)); }
+    }
+    const oud = await leesLessen(geladen.bus, geladen.code, await bewaardeLessen(geladen.code));
+    const bekend = new Set(oud.lessen.map((l) => l.id));
+    const nieuw = [], gezien = new Set();
+    for (const g of goed) if (!bekend.has(g.les.id) && !gezien.has(g.les.id)) { gezien.add(g.les.id); nieuw.push(g); }
+    await opslag.setAlles({ [kvLessen(geladen.code)]: [...oud.onleesbaar, ...oud.bestanden, ...nieuw.map((g) => g.bestand)] });
+    const al = new Set(goed.map((g) => g.les.id).filter((id) => !gezien.has(id))).size;   // elke les één keer, ook als hij twee keer gekozen is
+    return { geladen: { ...geladen, lessen: root.Les.uniek([...oud.lessen, ...nieuw.map((g) => g.les)]) }, nieuw: nieuw.length, overgeslagen: al, geweigerd };
+  }
+  /** Eén les van de pc halen (verkeerd ingevoerd of vals). */
+  async function lesWeg(geladen, id) {
+    if (!zelfdeBus(geladen.code, geladen.bus)) throw new Overzicht.OverzichtFout(VERVANGEN);
+    const oud = await leesLessen(geladen.bus, geladen.code, await bewaardeLessen(geladen.code));
+    const blijft = oud.lessen.filter((l) => l.id !== id);
+    await opslag.setAlles({ [kvLessen(geladen.code)]: [...oud.onleesbaar, ...blijft.map((l) => oud.bestandVan.get(l.id))] });
+    return { ...geladen, lessen: blijft };
+  }
+
+  /** Alles van één groep met een geopende brievenbus: logs (nieuwste per V-nummer), rooster, ledenlijst, gegeven lessen en het bestand voor de mariniers. */
+  async function laadMetBus(code, bus) {
+    const { inhouden, bestanden, bestandVan, onleesbaar } = await leesLogs(bus, code, await bewaardeLijst(code));
+    const groepBestand = (await opslag.get(kvGroep(code))) || null, plan = await leesPlan(bus, code), leden = await leesLeden(bus, code);
+    const lessen = await leesLessen(bus, code, await bewaardeLessen(code));
+    return { bus, code, bestanden, onleesbaar, inhouden, bestandVan, keuze: null, groepBestand, plan, leden, lessen: lessen.lessen, lessenOnleesbaar: lessen.onleesbaar.length };
+  }
+
+  /* ---------- voor het dashboard: alle groepen in één keer ---------- */
+  let bussen = {};   // laatst gelezen sleutelbestanden (versleuteld)
+  const VERVANGEN = "De sleutel van deze groep is intussen vervangen. Open het dashboard opnieuw.";
+  const zelfdeBus = (code, bus) => Boolean(bussen[code]) && bussen[code].publiek === bus.publiek;
+  async function ververs() { bussen = await bewaardeBussen(); return bussen; }
+  const codes = () => Object.keys(bussen);
+  /** Eén groep openen met een instructeurswachtwoord. Null bij een verkeerd wachtwoord. */
+  async function laadGroep(code, pw) {
+    let bus;
+    try { bus = await Brievenbus.openBrievenbus(bussen[code], pw); } catch (e) { if (e instanceof Brievenbus.BusFout) return null; throw e; }
+    return laadMetBus(code, bus);
+  }
+  /** Opnieuw inlezen uit de opslag; null als de sleutel van deze groep intussen is vervangen (de groep is dan weer dicht). */
+  async function herlaad(code, bus) {
+    await ververs();
+    return zelfdeBus(code, bus) ? laadMetBus(code, bus) : null;
+  }
+  /** Sleutelbestand erbij zonder vragen: alleen een nieuwe code. Een andere brievenbus voor een bestaande code vervang je in Logs (met waarschuwing). */
+  async function sleutelErbij(w) {
+    await ververs();
+    const bestaand = bussen[w.code];
+    if (bestaand) return isZelfdeBestand(bestaand, w) ? "al" : "anders";
+    bussen = await bewaarBus(w, false);
+    return "nieuw";
+  }
+  /** Logbestanden ([{ naam, bestand }]) van een geopende groep controleren en bewaren, samen met wat er al op de pc staat. */
+  async function logsErbij(geladen, items) {
+    if (!zelfdeBus(geladen.code, geladen.bus)) throw new Overzicht.OverzichtFout(VERVANGEN);
+    const goed = [], geweigerd = [];
+    for (const { naam, bestand } of items) {
+      try {
+        if (bestand.code !== geladen.code) throw new Overzicht.OverzichtFout("Dit logbestand is van een andere groep (" + codeLabel(bestand.code) + ").");
+        Overzicht.controleerInhoud(await Brievenbus.openLogBestand(bestand, geladen.bus), geladen.code, Date.now());
+        goed.push(bestand);
+      } catch (e) { geweigerd.push(naam + ": " + foutTekst(e)); }
+    }
+    const gelezen = await bewaardeLogs(geladen.bus, geladen.code, goed);
+    await bewaarLogs(geladen.code, gelezen);
+    const nieuw = goed.filter((b) => gelezen.bestanden.includes(b)).length;
+    return { geladen: { ...geladen, ...gelezen }, nieuw, overgeslagen: goed.length - nieuw, geweigerd };
+  }
+  /** Rooster openen met een groepswachtwoord, zonder iets te bewaren. Null als het wachtwoord niet past; andere fouten (code klopt niet, opbouw) gaan door. */
+  async function roosterOpen(w, pw) {
+    let geopend;
+    try { geopend = await Kluis.openRooster(w, pw); } catch (e) { if (e instanceof Kluis.KluisFout && e.code === "WACHTWOORD") return null; throw e; }
+    return { code: geopend.code || "", plan: Overzicht.controleerPlan(Logboek.planVan(Logboek.controleerRooster(geopend.rooster))) };
+  }
+  /**
+   * Plan bewaren voor de brievenbus. Staat het bestand voor de mariniers op deze pc, dan moet hetzelfde groepswachtwoord dat openen
+   * en bij deze brievenbus horen: een rooster dat met het wachtwoord van een andere groep is gemaakt, wordt zo geweigerd.
+   */
+  /**
+   * Staat het bestand voor de mariniers op deze pc, dan moet het groepswachtwoord dat openen en bij deze brievenbus horen.
+   * Zo wordt een rooster dat met het wachtwoord van een andere groep is gemaakt geweigerd (dashboard én Logs).
+   */
+  async function controleerGroepWachtwoord(geladen, pw) {
+    if (!geladen.groepBestand) return;
+    let bb = null;
+    try { bb = await Kluis.openBrievenbusBestand(geladen.groepBestand, pw); } catch (_) { bb = null; }
+    if (!bb || bb.publiek !== geladen.bus.publiek) throw new Overzicht.OverzichtFout("Dit groepswachtwoord hoort niet bij de brievenbus van " + codeLabel(geladen.code) + ". Bestand niet ingelezen.");
+  }
+  async function roosterBewaar(geladen, plan, pw) {
+    if (!zelfdeBus(geladen.code, geladen.bus)) throw new Overzicht.OverzichtFout(VERVANGEN);
+    await controleerGroepWachtwoord(geladen, pw);
+    await bewaarPlan(geladen.code, geladen.bus, plan);
+    return { ...geladen, plan };
+  }
+  /** Groepsbestand (uitslagen) openen met het groepswachtwoord en alleen de V-nummers houden. Null als het wachtwoord niet past. */
+  async function ledenOpen(w, pw) {
+    let geopend;
+    try { geopend = await Kluis.openUitslagen(w, pw); } catch (e) { if (e instanceof Kluis.KluisFout && e.code === "WACHTWOORD") return null; throw e; }
+    const leden = root.Dashboard.ledenUitUitslagen(geopend.data);
+    if (!leden.length) throw new Overzicht.OverzichtFout("Dit groepsbestand bevat geen V-nummers. Ledenlijst niet ingelezen.");
+    return { code: geopend.code || "", leden, gemaakt: String(w.gemaakt || "") };
+  }
+  /**
+   * Ledenlijst bewaren voor de brievenbus (zelfde controle van het groepswachtwoord als bij het rooster).
+   * Een ouder groepsbestand (datum op het bestand) vervangt een nieuwer niet: dan OverzichtFout.
+   * Een lijst die maar weinig V-nummers bevat van wie al inleverde, past niet bij deze groep: dan ook OverzichtFout.
+   */
+  const MIN_OVERLAP = 0.5;
+  async function ledenBewaar(geladen, nieuw, pw) {
+    if (!zelfdeBus(geladen.code, geladen.bus)) throw new Overzicht.OverzichtFout(VERVANGEN);
+    await controleerGroepWachtwoord(geladen, pw);
+    const bewaard = await opslag.get(kvLeden(geladen.code));
+    let oud = null;
+    if (bewaard) { try { oud = await leesLedenMetDatum(geladen.bus, bewaard); } catch (_) { oud = null; } }
+    if (oud && oud.gemaakt && nieuw.gemaakt && (Basis.datumVolgorde(oud.gemaakt) || "") > (Basis.datumVolgorde(nieuw.gemaakt) || ""))
+      throw new Overzicht.OverzichtFout("Er staat al een ledenlijst uit een nieuwer groepsbestand (" + oud.gemaakt + "). Dit oudere bestand is niet ingelezen.");
+    const metLog = geladen.inhouden.map((i) => i.vnr);
+    const erin = metLog.filter((v) => nieuw.leden.includes(v)).length;
+    if (metLog.length && erin < metLog.length * MIN_OVERLAP)
+      throw new Overzicht.OverzichtFout("Deze ledenlijst past niet bij de ingeleverde logs: " + (metLog.length - erin) + " van " + metLog.length + " V-nummers die inleverden staan er niet in. Ledenlijst niet ingelezen.");
+    await opslag.setAlles({ [kvLeden(geladen.code)]: await Brievenbus.versleutelVoorBus({ leden: nieuw.leden, gemaakt: nieuw.gemaakt }, geladen.bus.publiek, geladen.code, new Date().toISOString()) });
+    return { ...geladen, leden: nieuw.leden };
+  }
+
+  root.BeheerOpslag = Object.freeze({
+    ledenOpen, ledenBewaar, kvLeden, kvLessen, lessenErbij, lesWeg,
+    opslag, KV_BUSSEN, kvLogs, kvRooster, kvGroep, codeLabel, foutTekst, isZelfdeBestand,
+    bewaardeBussen, bewaarBus, leesLogs, bewaardeLogs, bewaarLogs, leesPlan, bewaarPlan, laadMetBus,
+    ververs, codes, laadGroep, herlaad, sleutelErbij, logsErbij, roosterOpen, roosterBewaar, controleerGroepWachtwoord
+  });
 })(globalThis);
 
 "use strict";
 /* COMBATREADY Instructeur - schermen. Brievenbus maken, logbestanden inlezen, overzicht per week en per persoon. */
 (() => {
-const { Basis, Kluis, Logboek, Brievenbus, Overzicht, Grafiek, Maken, Groepen, Uitslagen } = globalThis;
+const { Basis, Kluis, Logboek, Brievenbus, Overzicht, Grafiek, Maken, Groepen, Uitslagen, BeheerOpslag, Les } = globalThis;
 const { $, el, msg, busy } = Basis;
 const IDLE_MS = 10 * 60 * 1000;
 const HIDDEN_MS = 2 * 60 * 1000;
 const MAX_BESTAND_BYTES = 2 * 1024 * 1024;
 const MAX_ROOSTER_BYTES = 5 * 1024 * 1024;
 const MAX_CODE = 10;
-const KV_BUSSEN = "bussen";              // { code: sleutelbestand } - privésleutel versleuteld
-const kvLogs = (code) => "logs:" + code; // [logbestand, ...] - versleuteld voor de brievenbus
-const kvRooster = (code) => "rooster:" + code; // plan uit het rooster - versleuteld voor de brievenbus
-const kvGroep = (code) => "groep:" + code; // bestand voor de mariniers - versleuteld met het groepswachtwoord
 const DAGEN = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];
 const APP_NAAM = "COMBATREADY Instructeur";
-const opslag = Basis.maakOpslag("mpt-log-beheer");
+// Opslag, sleutels, logs en plan: gedeeld met het dashboard (bron/beheeropslag.js).
+const { opslag, KV_BUSSEN, kvLogs, kvGroep, codeLabel, foutTekst, isZelfdeBestand, bewaardeBussen, bewaarPlan, laadMetBus, bewaardeLogs, bewaarLogs } = BeheerOpslag;
 const OPSLAAN_MISLUKT = "Opslaan op deze pc is mislukt.";
 
 let bussen = {};      // versleutelde sleutelbestanden per code
@@ -2360,12 +3424,11 @@ let wachtRooster = null;   // gekozen roosterbestand dat nog met het groepswacht
 let nieuw = null;     // net gemaakte brievenbus: { groepBestand, sleutelBestand, code }
 let slotTeller = 0;   // telt elke vergrendeling: een brievenbus die daarna nog opengaat, wordt weggegooid
 
-const foutTekst = (e) => (e instanceof Brievenbus.BusFout || e instanceof Kluis.KluisFout || e instanceof Overzicht.OverzichtFout || e instanceof Logboek.LogFout ? e.message : "Er ging iets mis. Probeer het opnieuw.");
-const codeLabel = (code) => (code ? "Groep " + code : "Groep zonder code");
 const kaart = (titel, ...kids) => el("div", { class: "card" }, el("h2", { text: titel }), ...kids);
+const zetSlotKnop = () => { $("#btnLock").hidden = open === null && !Groepen.heeftOpen(); };
 function show(id) {
   for (const s of document.querySelectorAll(".screen")) s.hidden = s.id !== id;
-  $("#btnLock").hidden = open === null && !Groepen.heeftOpen();
+  zetSlotKnop();
   // De knoppen bovenaan volgen het getoonde scherm.
   const sectie = id === "scrBestanden" ? "#secMaken" : (id === "scrGroepen" || id === "scrGroep" ? "#secGroepen" : "#secLogs");
   for (const knop of ["#secGroepen", "#secLogs", "#secMaken"]) {
@@ -2376,32 +3439,37 @@ function show(id) {
 const pwUit = (veld) => { const v = $(veld).value; $(veld).value = ""; return v; };   // meteen leegmaken
 
 /* ---------- start ---------- */
-function startScherm(melding, soort, kiesCode) {
-  $("#title").textContent = APP_NAAM;
+function tekenBusKeuze(kiesCode) {
   const codes = Object.keys(bussen).sort((a, b) => a.localeCompare(b, "nl", { numeric: true }));
   $("#openCard").hidden = codes.length === 0;
   const keuze = $("#busKeuze"); keuze.textContent = "";
   codes.forEach((code) => keuze.append(el("option", { value: code, text: codeLabel(code) + " · gemaakt " + (bussen[code].gemaakt || "?") })));
   if (kiesCode && codes.includes(kiesCode)) keuze.value = kiesCode;
   keuze.hidden = codes.length < 2;
+}
+function startScherm(melding, soort, kiesCode) {
+  $("#title").textContent = APP_NAAM;
+  tekenBusKeuze(kiesCode);
   msg($("#msgStart"), melding || "", soort);
   show("scrStart");
 }
-// Altijd uitgaan van wat er op de pc staat, niet van wat dit venster onthield: in een ander venster kan intussen iets zijn bijgekomen of gewist.
-const bewaardeBussen = async () => (await opslag.get(KV_BUSSEN)) || {};
-async function bewaarBus(sleutelBestand, isAndereBus) {
-  const bijgewerkt = { ...(await bewaardeBussen()), [sleutelBestand.code]: sleutelBestand };
-  // Andere brievenbus: het bewaarde bestand voor de mariniers hoort er dan niet meer bij.
-  await opslag.setAlles({ [KV_BUSSEN]: bijgewerkt, ...(isAndereBus ? { [kvGroep(sleutelBestand.code)]: null } : {}) });
-  bussen = bijgewerkt;
+// De sleutels zoals ze nu op de pc staan: het dashboard (andere pagina) of een ander venster kan er intussen een hebben bewaard of vervangen.
+// Altijd vóór een controle als "staat er al een brievenbus?", anders wordt een elders bewaarde sleutel stil overschreven.
+async function leesBussenOpnieuw() { bussen = await bewaardeBussen(); return bussen; }
+// Terug in beeld op het startscherm: de lijst met brievenbussen bijwerken (melding blijft staan).
+async function ververs() {
+  if ($("#scrStart").hidden || open !== null) return;
+  try { await leesBussenOpnieuw(); } catch (_) { return; }
+  if (!$("#scrStart").hidden && open === null) tekenBusKeuze($("#busKeuze").value);
 }
-const isZelfdeBestand = (a, b) => ["publiek", "salt", "iv", "data", "gemaakt"].every((veld) => a[veld] === b[veld]);
+// Altijd uitgaan van wat er op de pc staat, niet van wat dit venster onthield: in een ander venster kan intussen iets zijn bijgekomen of gewist.
+async function bewaarBus(sleutelBestand, isAndereBus) { bussen = await BeheerOpslag.bewaarBus(sleutelBestand, isAndereBus); }
 async function opSleutelBestand() {
   const file = $("#sleutelIn").files[0];
   if (!file) return;
   try {
     const w = Brievenbus.controleerSleutelBestand(await Basis.leesJson(file, MAX_BESTAND_BYTES));
-    const bestaand = bussen[w.code];
+    const bestaand = (await leesBussenOpnieuw())[w.code];
     if (bestaand && isZelfdeBestand(bestaand, w)) return startScherm("Dit sleutelbestand van " + codeLabel(w.code) + " staat al op deze pc.", "ok", w.code);
     const isAndereBus = Boolean(bestaand) && bestaand.publiek !== w.publiek;
     if (isAndereBus && !confirm("Er staat al een andere brievenbus voor " + codeLabel(w.code) + " op deze pc. Vervangen? Logs voor de oude brievenbus zijn daarna hier niet meer te openen.")) return;
@@ -2434,6 +3502,7 @@ async function maakBus() {
   if (pw1.length < Brievenbus.MIN_WACHTWOORD) return msg(meld, "Het instructeurswachtwoord moet minimaal " + Brievenbus.MIN_WACHTWOORD + " tekens hebben.");
   if (pw1 !== pw2) return msg(meld, "De twee instructeurswachtwoorden zijn niet gelijk.");
   if (pw1 === groepPw) return msg(meld, "Kies een instructeurswachtwoord dat anders is dan het groepswachtwoord. Anders kan elke marinier de logs openen.");
+  try { await leesBussenOpnieuw(); } catch (_) { return msg(meld, OPSLAAN_MISLUKT); }
   if (bussen[code] && !confirm("Er bestaat al een brievenbus voor " + codeLabel(code) + ". Een nieuwe maken? De mariniers moeten dan het nieuwe bestand importeren. De sleutel van de oude brievenbus verdwijnt van deze pc: download eerst het sleutelbestand (reservekopie) als je de oude logs nog wilt kunnen openen.")) return;
   msg(meld, "");
   busy($("#btnMaak"), true, "Bezig…");
@@ -2463,20 +3532,6 @@ async function download(naam, inhoud, meld) {
 }
 
 /* ---------- openen en slot ---------- */
-async function leesLogs(bus, code, bestanden) {
-  const gelezen = [], onleesbaar = [];
-  for (const bestand of bestanden) {
-    try { gelezen.push({ bestand, inhoud: Overzicht.controleerInhoud(await Brievenbus.openLogBestand(bestand, bus), code, Date.now()) }); }
-    catch (e) { if (e instanceof Brievenbus.BusFout) onleesbaar.push(bestand); }   // voor een andere brievenbus: bewaren maar niet tonen; ongeldige inhoud vervalt
-  }
-  const nieuwste = Overzicht.nieuwstePerPersoon(gelezen.map((g) => g.inhoud));
-  const geldend = gelezen.filter((g) => nieuwste.includes(g.inhoud));
-  return { inhouden: nieuwste, bestanden: geldend.map((g) => g.bestand), bestandVan: new Map(geldend.map((g) => [g.inhoud.vnr, g.bestand])), onleesbaar };
-}
-// De logs zoals ze nu op de pc staan (een ander venster kan er intussen bij hebben gezet of gewist), plus eventueel nieuwe.
-async function bewaardeLogs(bus, code, extra) {
-  return leesLogs(bus, code, [...((await opslag.get(kvLogs(code))) || []), ...extra]);
-}
 async function openBus() {
   const code = $("#busKeuze").value;
   const pw = pwUit("#pwOpen");
@@ -2485,12 +3540,12 @@ async function openBus() {
   busy($("#btnOpen"), true, "Bezig…");
   const teller = slotTeller;
   try {
+    await leesBussenOpnieuw();
+    if (!bussen[code]) { startScherm("De brievenbus van " + codeLabel(code) + " staat niet meer op deze pc."); return; }
     const bus = await Brievenbus.openBrievenbus(bussen[code], pw);
-    const bewaard = (await opslag.get(kvLogs(code))) || [];
-    const { inhouden, bestanden, bestandVan, onleesbaar } = await leesLogs(bus, code, bewaard);
-    const groepBestand = (await opslag.get(kvGroep(code))) || null, plan = await leesPlan(bus, code);
+    const geladen = await laadMetBus(code, bus);
     if (teller !== slotTeller) return;   // intussen vergrendeld: niet alsnog openen
-    open = { bus, code, bestanden, onleesbaar, inhouden, bestandVan, keuze: null, groepBestand, plan };
+    open = geladen;
     overzichtScherm();
   } catch (e) { msg($("#msgOpen"), foutTekst(e)); }
   finally { busy($("#btnOpen"), false, "Open"); slot.arm(); }
@@ -2519,7 +3574,9 @@ async function opLogBestanden() {
   const geweigerd = [], goed = [];
   for (const file of files) {
     try {
-      const bestand = Brievenbus.controleerLogBestand(await Basis.leesJson(file, MAX_BESTAND_BYTES));
+      const ruw = await Basis.leesJson(file, MAX_BESTAND_BYTES);
+      if (ruw && ruw.formaat === Les.FORMAAT_UIT) throw new Overzicht.OverzichtFout("Dit is een lessenbestand (aanwezigheid van de tablet). Lees het in op het dashboard (pc), bij Bestanden inlezen.");
+      const bestand = Brievenbus.controleerLogBestand(ruw);
       if (bestand.code !== open.code) throw new Overzicht.OverzichtFout("Dit logbestand is van een andere groep (" + codeLabel(bestand.code) + ").");
       Overzicht.controleerInhoud(await Brievenbus.openLogBestand(bestand, open.bus), open.code, Date.now());
       goed.push(bestand);
@@ -2530,7 +3587,7 @@ async function opLogBestanden() {
     const { bus, code } = open;
     const gelezen = await bewaardeLogs(bus, code, goed);
     if (!open) return;                       // vergrendeld tijdens het inlezen: niets bewaren
-    await opslag.setAlles({ [kvLogs(code)]: [...gelezen.onleesbaar, ...gelezen.bestanden] });
+    await bewaarLogs(code, gelezen);
     if (!open) return;
     open = { ...open, ...gelezen };
     overgenomen = goed.filter((b) => gelezen.bestanden.includes(b)).length;
@@ -2564,12 +3621,6 @@ async function wisPersoon(vnr) {
 }
 
 /* ---------- rooster inlezen: nodig om open lessen te tonen ---------- */
-async function leesPlan(bus, code) {
-  const bewaard = await opslag.get(kvRooster(code));
-  if (!bewaard) return null;
-  try { return Overzicht.controleerPlan(await Brievenbus.openLogBestand(bewaard, bus)); }
-  catch (_) { return null; }   // van een andere brievenbus: opnieuw inlezen
-}
 function tekenRooster() {
   $("#roosterInfo").textContent = open.plan
     ? "Rooster van " + (open.plan.gemaakt || "?") + ". Het overzicht toont ook welke lessen nog open staan."
@@ -2597,11 +3648,13 @@ async function openRooster() {
   let plan;
   try {
     const geopend = await Kluis.openRooster(wachtRooster, pw);
+    // Zelfde controle als op het dashboard: het groepswachtwoord moet ook het bestand voor de mariniers van deze brievenbus openen.
+    await BeheerOpslag.controleerGroepWachtwoord(open, pw);
     plan = Overzicht.controleerPlan(Logboek.planVan(Logboek.controleerRooster(geopend.rooster)));
   } catch (e) { busy($("#btnRoosterOpen"), false, "Open"); return msg(meld, foutTekst(e)); }
   try {
     // Bewaard voor de brievenbus zelf: daarna is alleen het instructeurswachtwoord nodig.
-    await opslag.setAlles({ [kvRooster(open.code)]: await Brievenbus.versleutelVoorBus(plan, open.bus.publiek, open.code, new Date().toISOString()) });
+    await bewaarPlan(open.code, open.bus, plan);
   } catch (_) { return msg(meld, OPSLAAN_MISLUKT); }
   finally { busy($("#btnRoosterOpen"), false, "Open"); }
   open = { ...open, plan, keuze: null };
@@ -2707,7 +3760,7 @@ function persoonScherm(vnr, k) {
   host.append(
     kaart("V-nummer " + vnr, el("p", { class: "muted small", text: "Ingeleverd " + datumKort(inhoud.gemaakt) + " · " + k.meso.meso })),
     mptKaart(vnr),
-    k.meso.weken.length > 1 ? kaart("Belasting per week", Grafiek.trend(trend, k.wk, (wk) => { open = { ...open, keuze: { meso: k.meso.meso, wk } }; persoonScherm(vnr, { meso: k.meso, wk }); })) : null,
+    ...(k.meso.weken.length > 1 ? [kaart("Belasting per week", Grafiek.trend(trend, k.wk, (wk) => { open = { ...open, keuze: { meso: k.meso.meso, wk } }; persoonScherm(vnr, { meso: k.meso, wk }); }))] : []),
     kaart("Week " + k.wk, lijst),
     el("div", { style: "text-align:center" }, wis));
   show("scrPersoon");
@@ -2753,10 +3806,13 @@ function koppelKnoppen() {
   $("#btnGroepUit").addEventListener("click", () => download(groepNaam(open.code), open.groepBestand, $("#msgLogs")));
   $("#btnTerug").addEventListener("click", overzichtScherm);
 }
+addEventListener("focus", ververs);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) ververs(); });
 async function start() {
   koppelKnoppen();
   await Groepen.koppel({ show, arm: () => slot.arm(), titel: (tekst) => { $("#title").textContent = tekst || APP_NAAM; } });
-  try { bussen = (await opslag.get(KV_BUSSEN)) || {}; }
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});   // zoals in de andere onderdelen: de browser mag de opslag dan niet zelf opruimen
+  try { bussen = await bewaardeBussen(); }
   catch (_) { show("scrStart"); return msg($("#msgStart"), "Deze browser kan niets bewaren (privémodus?)."); }
   startScherm();
 }
