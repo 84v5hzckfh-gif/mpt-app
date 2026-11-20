@@ -346,6 +346,8 @@ button.lesvink[aria-pressed="true"] .vink{background:linear-gradient(180deg,var(
 /* Krachtles (marinier): eigen kg bij % van 1RM */
 table.krachttabel td,table.krachttabel th{padding:9px 8px;font-size:15px}
 table.krachttabel tbody tr:nth-child(even) td{background:var(--vlak)}
+/* Jouw tempo (marinier) */
+.out.loopuit b{font-size:17px}
 main{max-width:760px}
 .chips{flex-wrap:wrap;overflow-x:visible}
 table.overzicht{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:15px}
@@ -2029,6 +2031,11 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
   // Vanaf deze afstand rekent de looptijd met de 5 km-tijd (B72), daaronder (intervallen, t/m 3000 m) met de 1000m-tijd (B50).
   // Zoals de tabel Trainingsafstanden in de Excel (3000 m op 1000m, 5/8/10/12 km op 5 km); besloten 17-11-2026.
   const VANAF_5KM_M = 5000;
+  // Basis van het percentage bij hardlopen: OP = optimale prestatie op die afstand (zoals de Excel), AD = anaerobe drempel.
+  // AD-tempo (100%) = het tempo dat de marinier volgens zijn 5 km-tijd 60 minuten voluit zou lopen (Riegel, zelfde exponent).
+  // Bron: drempeltempo = tempo dat je 50-60 minuten volhoudt (RunnersConnect); besloten 20-11-2026.
+  const BASISSEN = Object.freeze(["OP", "AD"]);
+  const AD_SECONDEN = 3600;
 
   class LesFout extends Error {
     constructor(melding) { super(melding); this.name = "LesFout"; }
@@ -2053,7 +2060,8 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     for (const naam of ONDERDELEN) if (lijst(naam).length > MAX_REGELS) throw new LesFout("Maximaal " + MAX_REGELS + " regels per onderdeel.");
     const loop = lijst("loop").map((r) => {
       if (!r || !isGetal(r.m, GRENZEN.loop.m) || !isGetal(r.pct, GRENZEN.loop.pct)) throw new LesFout("Hardlopen: afstand " + GRENZEN.loop.m.join("-") + " m en " + GRENZEN.loop.pct.join("-") + "%.");
-      return { m: r.m, pct: r.pct };
+      if (r.basis !== undefined && !BASISSEN.includes(r.basis)) throw new LesFout("Hardlopen: kies OP of AD.");
+      return { m: r.m, pct: r.pct, basis: r.basis === "AD" ? "AD" : "OP" };
     });
     const kracht = lijst("kracht").map((r) => {
       if (!r || typeof r.naam !== "string" || !r.naam.trim() || !isGetal(r.pct, GRENZEN.kracht.pct)) throw new LesFout("Kracht: kies een oefening en " + GRENZEN.kracht.pct.join("-") + "% van 1RM.");
@@ -2131,10 +2139,19 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
   }
   const xmod = (a, b) => a - b * Math.floor(a / b);
   const mmss = (s) => Math.floor(s / 60) + ":" + String(xround(xmod(s, 60), 0)).padStart(2, "0");
+  /** Tijd als m:ss, vanaf een uur als u:mm:ss. */
+  const tijdTekst = (s) => (s < 3600 ? mmss(s) : Math.floor(s / 3600) + ":" + mmss(xmod(s, 3600)).padStart(5, "0"));
   const kgTekst = (x) => x.toLocaleString("nl-NL", { maximumFractionDigits: 1 });
 
   /** Looptijd in seconden voor afstand m op pct% van de 1000m-tijd b50 (zoals de tabel Trainingsafstanden). */
   const looptijd = (b50, m, pct) => xround(b50 * Math.pow(m / 1000, 1.06) * (100 / xround(pct, 6)), 0);
+  /** AD-tempo in seconden per km uit de 5 km-tijd (seconden): het tempo voor 60 minuten voluit. */
+  function adTempo(k5) {
+    const km = 5 * Math.pow(AD_SECONDEN / k5, 1 / 1.06);
+    return AD_SECONDEN / km;
+  }
+  /** Looptijd in seconden voor m meter op pct% van het AD-tempo. b72 = 5 km-equivalent per 1000 m (uit het groepsbestand). */
+  const adLooptijd = (b72, m, pct) => xround((m / 1000) * adTempo(b72 * Math.pow(5, 1.06)) * (100 / xround(pct, 6)), 0);
   /** Gewicht bij pct% van 1RM, op 0,1 kg (zoals de tabel % van 1RM). */
   const krachtKg = (rm, pct) => xround(rm * (pct / 100), 1);
 
@@ -2150,7 +2167,15 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     const basisVan = (m) => getal(waarden && (m >= VANAF_5KM_M ? waarden.b72 : waarden.b50));
     const rmVan = (naam) => { const k = waarden && (waarden.kracht || []).find((x) => x.naam === naam); return k && typeof k.rm === "number" ? k.rm : null; };
     return {
-      loop: o.loop.map((r) => { const b = basisVan(r.m); return b === null ? "–" : mmss(looptijd(b, r.m, r.pct)); }),
+      loop: o.loop.map((r) => {
+        if (r.basis === "AD") {   // AD: altijd uit de 5 km-tijd; met tempo per km erbij
+          const b72 = getal(waarden && waarden.b72);
+          if (b72 === null) return "–";
+          const t = adLooptijd(b72, r.m, r.pct);
+          return tijdTekst(t) + " · " + mmss(xround(t * 1000 / r.m, 0)) + "/km";
+        }
+        const b = basisVan(r.m); return b === null ? "–" : tijdTekst(looptijd(b, r.m, r.pct));
+      }),
       kracht: o.kracht.map((r) => { const rm = rmVan(r.naam); return rm === null ? "–" : kgTekst(krachtKg(rm, r.pct)) + " kg"; })
     };
   }
@@ -2161,8 +2186,8 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     if (!waarden) return ["niet in het groepsbestand"];
     const heeft = (x) => typeof x === "number" && isFinite(x);
     const uit = [];
-    if (o.loop.some((r) => r.m < VANAF_5KM_M) && !heeft(waarden.b50)) uit.push("1000m-tijd");
-    if (o.loop.some((r) => r.m >= VANAF_5KM_M) && !heeft(waarden.b72)) uit.push("5 km-tijd");
+    if (o.loop.some((r) => r.m < VANAF_5KM_M && r.basis !== "AD") && !heeft(waarden.b50)) uit.push("1000m-tijd");
+    if (o.loop.some((r) => r.m >= VANAF_5KM_M || r.basis === "AD") && !heeft(waarden.b72)) uit.push("5 km-tijd");
     for (const r of o.kracht) { const k = (waarden.kracht || []).find((x) => x.naam === r.naam); if (!k || !heeft(k.rm)) uit.push("1RM " + r.naam); }
     return [...new Set(uit)];
   }
@@ -2179,7 +2204,7 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
   function omschrijving(onderdelen) {
     const o = controleerOnderdelen(onderdelen);
     const getal = (x) => String(x).replace(".", ",");
-    return [...o.loop.map((r) => getal(r.m) + " m " + getal(r.pct) + "%"), ...o.kracht.map((r) => r.naam + " " + getal(r.pct) + "%"),
+    return [...o.loop.map((r) => getal(r.m) + " m " + getal(r.pct) + "%" + (r.basis === "AD" ? " AD" : "")), ...o.kracht.map((r) => r.naam + " " + getal(r.pct) + "%"),
       ...o.speedmars.map((r) => "Speedmars " + getal(r.kg) + " kg " + getal(r.km) + " km")].join(" · ");
   }
 
@@ -2196,6 +2221,8 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     const pct = m[2] ? (getalVan(m[1]) + getalVan(m[2])) / 2 : getalVan(m[1]);
     return isGetal(pct, GRENZEN.loop.pct) ? Math.round(pct * 2) / 2 : null;
   }
+  /** "AD" als het percentage van de anaerobe drempel is ("90–95% AD"), anders "OP". */
+  const basisUit = (tekst) => (/%\s*AD\b/i.test(String(tekst || "")) ? "AD" : "OP");
   function herhaalAfstandUit(tekst) {   // "8–10×400 m", "7-8 x 600m" -> 400 / 600
     const m = /[×x]\s*(\d+(?:[.,]\d+)?)\s*(km|m)\b/i.exec(String(tekst || ""));
     if (!m) return null;
@@ -2217,7 +2244,8 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     const km = kmUit(x.km) ?? kmUit(naam);
     const m = herhaal ?? (km !== null && km * 1000 <= GRENZEN.loop.m[1] ? km * 1000 : null);
     const pct = percentageUit(x.zone) ?? percentageUit(naam);
-    return { aan, loop: m !== null || pct !== null ? { m, pct } : null, speedmarsKm: km };
+    const basis = percentageUit(x.zone) !== null ? basisUit(x.zone) : basisUit(naam);
+    return { aan, loop: m !== null || pct !== null ? { m, pct, basis } : null, speedmarsKm: km };
   }
 
   /**
@@ -2237,7 +2265,7 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     return { loop: /hardlo|loop|interval/.test(d), kracht: /kracht/.test(d), speedmars: /speedmars/.test(d) };
   }
 
-  const api = Object.freeze({ VANAF_5KM_M, LesFout, FORMAAT_INHOUD, FORMAAT_UIT, MAX_REGELS, MAX_AANWEZIG, MAX_LESSEN, GRENZEN, geldigVnr, leesGetal,
+  const api = Object.freeze({ VANAF_5KM_M, BASISSEN, adTempo, adLooptijd, tijdTekst, LesFout, FORMAAT_INHOUD, FORMAAT_UIT, MAX_REGELS, MAX_AANWEZIG, MAX_LESSEN, GRENZEN, geldigVnr, leesGetal,
     controleerOnderdelen, controleerAanwezig, maakInhoud, controleerInhoud, controleerUit, maakUit, uniek, doelen, speedmarsDoel, omschrijving,
     standaardOnderdelen, invoerSoort, voorstel, ontbreekt, looptijd, krachtKg, mmss });
   if (typeof module !== "undefined" && module.exports) module.exports = api;
@@ -2908,7 +2936,7 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     const standaardOef = oef.find((k) => k.r === Number(inv.B36)) || oef[0];
     regels = {
       // niets gevonden: leeg laten (leeg = alleen aanwezigheid), niet een standaard die op een andere les slaat
-      loop: [v.loop ? { m: tekstGetal(v.loop.m), pct: tekstGetal(v.loop.pct) } : soort === "vast" ? { m: "", pct: "" } : { m: String(inv.B51 ?? 400), pct: String(inv.E51 ?? 80) }],
+      loop: [v.loop ? { m: tekstGetal(v.loop.m), pct: tekstGetal(v.loop.pct), basis: v.loop.basis } : soort === "vast" ? { m: "", pct: "", basis: "OP" } : { m: String(inv.B51 ?? 400), pct: String(inv.E51 ?? 80), basis: "OP" }],
       kracht: [{ naam: standaardOef ? standaardOef.naam : "", pct: "80" }],
       speedmars: [{ kg: String(inv.B78 ?? 15), km: tekstGetal(v.speedmarsKm ?? inv.B86 ?? 9) }]
     };
@@ -2932,7 +2960,7 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
       kop.append(el("h3", { text: "Wat zit er in de les?" }), chips, el("p", { class: "note", text: "Zet aan wat erin zit. Niets aan: alleen aanwezigheid." }));
     } else kop.append(el("p", { class: "note", text: "Voorgevuld uit zone, km en opdracht van de les; pas aan waar nodig. Leeg laten: alleen aanwezigheid." }));
     h.append(kop);
-    if (aan.loop) h.append(onderdeelKaart("loop", [["m", "Afstand (m)"], ["pct", "%"]]));
+    if (aan.loop) h.append(onderdeelKaart("loop", [["m", "Afstand (m)"], ["pct", "%"], ["basis", "van"]]));
     if (aan.kracht) h.append(onderdeelKaart("kracht", [["naam", "Oefening"], ["pct", "% van 1RM"]]));
     if (aan.speedmars) h.append(onderdeelKaart("speedmars", [["kg", "Bepakking (kg)"], ["km", "Afstand (km)"]]));
     h.append(knop("Verder: wie is er?", () => { if (gelezenOnderdelen()) naar("aanwezig"); }, "btn", { id: "btnLesVerder" }));
@@ -2950,6 +2978,10 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
           for (const o of oef) input.append(el("option", { value: o.naam, text: o.naam }));
           if (!oef.length) input.append(el("option", { value: "", text: "Geen oefeningen in het groepsbestand" }));
           input.value = r.naam;
+        } else if (veld === "basis") {   // hardlopen: % van optimale prestatie (OP) of van de anaerobe drempel (AD)
+          input = el("select", { class: "fill", "data-veld": veld, "aria-label": label });
+          input.append(el("option", { value: "OP", text: "OP (prestatie)" }), el("option", { value: "AD", text: "AD (drempel)" }));
+          input.value = r.basis === "AD" ? "AD" : "OP";
         } else input = invoer(r[veld], { inputmode: "decimal", "data-veld": veld, "aria-label": label, name: "search-" + s + veld });
         input.addEventListener("change", () => { leesDetails(); bewaarConcept(); });
         rij.append(el("label", { class: "lesveld" }, el("span", { text: label }), input));
@@ -2958,7 +2990,7 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
       k.append(rij);
     });
     if (s === "speedmars") k.append(el("p", { class: "note", text: "Speedmars is voor iedereen gelijk: de doeltijd staat bovenaan het overzicht." }));
-    if (s === "loop") k.append(el("p", { class: "note", text: "% van de 1000m-tijd tot 5 km, van de 5 km-tijd vanaf 5 km (zoals de Excel)." }));
+    if (s === "loop") k.append(el("p", { class: "note", text: "OP = optimale prestatie: % van zijn beste tijd op die afstand (tot 5 km uit de 1000m-tijd, vanaf 5 km uit de 5 km-tijd, zoals de Excel). AD = anaerobe drempel: % van het tempo dat hij volgens zijn 5 km-tijd een uur voluit loopt; vast tempo per km, ook voor lange duurlopen." }));
     if (regels[s].length < Les.MAX_REGELS) k.append(knop("+ regel erbij", () => { leesDetails(); regels = { ...regels, [s]: [...regels[s], { ...regels[s][regels[s].length - 1] }] }; teken(); }, "linkish"));
     return k;
   }
@@ -2978,7 +3010,7 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
     if (stap === "details") leesDetails();
     const g = Les.leesGetal;
     const gevuld = (r, velden) => velden.some((v) => String(r[v] ?? "").trim());   // een helemaal lege regel telt niet mee
-    const o = { loop: aan.loop ? regels.loop.filter((r) => gevuld(r, ["m", "pct"])).map((r) => ({ m: g(r.m), pct: g(r.pct) })) : [],
+    const o = { loop: aan.loop ? regels.loop.filter((r) => gevuld(r, ["m", "pct"])).map((r) => ({ m: g(r.m), pct: g(r.pct), basis: r.basis === "AD" ? "AD" : "OP" })) : [],
       kracht: aan.kracht ? regels.kracht.filter((r) => gevuld(r, ["pct"])).map((r) => ({ naam: r.naam, pct: g(r.pct) })) : [],
       speedmars: aan.speedmars ? regels.speedmars.filter((r) => gevuld(r, ["kg", "km"])).map((r) => ({ kg: g(r.kg), km: g(r.km) })) : [] };
     try { return Les.controleerOnderdelen(o); } catch (e) { msg(melding(), e.message); return null; }
@@ -3103,7 +3135,7 @@ table.overzicht button{background:none;border:0;padding:0;font:inherit;font-weig
       }
       h.append(el("div", { class: "card uitslag" }, el("h2", { text: "Speedmars (voor iedereen)" }), sm));
     }
-    const kolommen = [...o.loop.map((r) => String(r.m) + " m · " + String(r.pct).replace(".", ",") + "%"), ...o.kracht.map((r) => r.naam + " · " + String(r.pct).replace(".", ",") + "%")];
+    const kolommen = [...o.loop.map((r) => String(r.m) + " m · " + String(r.pct).replace(".", ",") + "% " + (r.basis || "OP")), ...o.kracht.map((r) => r.naam + " · " + String(r.pct).replace(".", ",") + "%")];
     const tabel = el("table", { class: "ronden lestabel" });
     tabel.append(el("thead", null, el("tr", null, el("th", { text: "V-nummer" }), ...kolommen.map((k) => el("th", { text: k })))));
     const body = el("tbody");

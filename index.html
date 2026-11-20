@@ -345,6 +345,8 @@ button.lesvink[aria-pressed="true"] .vink{background:linear-gradient(180deg,var(
 /* Krachtles (marinier): eigen kg bij % van 1RM */
 table.krachttabel td,table.krachttabel th{padding:9px 8px;font-size:15px}
 table.krachttabel tbody tr:nth-child(even) td{background:var(--vlak)}
+/* Jouw tempo (marinier) */
+.out.loopuit b{font-size:17px}
 </style>
 </head>
 <body class="app">
@@ -447,6 +449,7 @@ table.krachttabel tbody tr:nth-child(even) td{background:var(--vlak)}
   <button class="back" type="button" id="btnTerug">‹ Week</button>
   <div class="card" id="lesKop"></div>
   <div class="card" id="lesKracht" hidden></div>
+  <div class="card" id="lesLoop" hidden></div>
   <div class="card">
     <h2>Horloge</h2>
     <div id="fitKort"></div>
@@ -2178,6 +2181,273 @@ table.krachttabel tbody tr:nth-child(even) td{background:var(--vlak)}
 
 "use strict";
 /*
+ * Les: aanwezigheid bij een les, door de instructeur op de tablet bijgehouden.
+ * Rekent per V-nummer de doelen uit (looptijd, kg) met dezelfde regels als Uitslagen, en maakt de inhoud
+ * die naar de brievenbus gaat. In dat bestand staan alleen de les, de onderdelen (bijv. 400 m op 90%) en
+ * de V-nummers van wie er was; de doelen (afgeleid van testuitslagen) gaan niet mee.
+ * Functies wijzigen hun invoer niet.
+ */
+(function (root) {
+  const FORMAAT_INHOUD = "mpt-les-inhoud";
+  const FORMAAT_UIT = "mpt-lessen-uit";        // bestand dat de tablet inlevert: lijst van lessen, elk versleuteld voor de brievenbus
+  const MAX_REGELS = 10;                       // per onderdeel
+  const MAX_AANWEZIG = 200;
+  const MAX_LESSEN = 300;                      // per inleverbestand
+  const MAX_VOORUIT_MS = 24 * 60 * 60 * 1000;
+  const VNR_PATROON = /^\d{3,10}$/;
+  const ID_PATROON = /^[0-9a-f]{16}$/;
+  const GRENZEN = Object.freeze({
+    loop: { m: [50, 42195], pct: [30, 120] },
+    kracht: { pct: [30, 110] },
+    speedmars: { kg: [0, 60], km: [0.5, 60] }
+  });
+  const ONDERDELEN = Object.freeze(["loop", "kracht", "speedmars"]);
+  // Vanaf deze afstand rekent de looptijd met de 5 km-tijd (B72), daaronder (intervallen, t/m 3000 m) met de 1000m-tijd (B50).
+  // Zoals de tabel Trainingsafstanden in de Excel (3000 m op 1000m, 5/8/10/12 km op 5 km); besloten 17-11-2026.
+  const VANAF_5KM_M = 5000;
+  // Basis van het percentage bij hardlopen: OP = optimale prestatie op die afstand (zoals de Excel), AD = anaerobe drempel.
+  // AD-tempo (100%) = het tempo dat de marinier volgens zijn 5 km-tijd 60 minuten voluit zou lopen (Riegel, zelfde exponent).
+  // Bron: drempeltempo = tempo dat je 50-60 minuten volhoudt (RunnersConnect); besloten 20-11-2026.
+  const BASISSEN = Object.freeze(["OP", "AD"]);
+  const AD_SECONDEN = 3600;
+
+  class LesFout extends Error {
+    constructor(melding) { super(melding); this.name = "LesFout"; }
+  }
+  const tekst = (v, max) => String(v === undefined || v === null ? "" : v).slice(0, max);
+  const isGetal = (v, [min, max]) => typeof v === "number" && isFinite(v) && v >= min && v <= max;
+  const natuurlijk = (a, b) => a.localeCompare(b, "nl", { numeric: true });
+  const geldigVnr = (v) => { const s = tekst(v, 20).trim(); return VNR_PATROON.test(s) ? s : null; };
+
+  /** Getal uit invoer ("400", "92,5", "80%"); null als het geen gewoon getal is ("1.000", "400m", "4e2" worden geweigerd). */
+  function leesGetal(v) {
+    const t = String(v === undefined || v === null ? "" : v).trim().replace(/\s*%$/, "");
+    if (!/^\d+(?:[.,]\d{1,2})?$/.test(t)) return null;   // hooguit 2 decimalen: "1.000" (duizend) is dan geen 1
+    const n = Number(t.replace(",", "."));
+    return isFinite(n) ? n : null;
+  }
+
+  /** Controleert de onderdelen van een les. Geeft een schone kopie of gooit LesFout met een melding voor de instructeur. */
+  function controleerOnderdelen(o) {
+    const x = o && typeof o === "object" ? o : {};
+    const lijst = (naam) => (Array.isArray(x[naam]) ? x[naam] : []);
+    for (const naam of ONDERDELEN) if (lijst(naam).length > MAX_REGELS) throw new LesFout("Maximaal " + MAX_REGELS + " regels per onderdeel.");
+    const loop = lijst("loop").map((r) => {
+      if (!r || !isGetal(r.m, GRENZEN.loop.m) || !isGetal(r.pct, GRENZEN.loop.pct)) throw new LesFout("Hardlopen: afstand " + GRENZEN.loop.m.join("-") + " m en " + GRENZEN.loop.pct.join("-") + "%.");
+      if (r.basis !== undefined && !BASISSEN.includes(r.basis)) throw new LesFout("Hardlopen: kies OP of AD.");
+      return { m: r.m, pct: r.pct, basis: r.basis === "AD" ? "AD" : "OP" };
+    });
+    const kracht = lijst("kracht").map((r) => {
+      if (!r || typeof r.naam !== "string" || !r.naam.trim() || !isGetal(r.pct, GRENZEN.kracht.pct)) throw new LesFout("Kracht: kies een oefening en " + GRENZEN.kracht.pct.join("-") + "% van 1RM.");
+      return { naam: tekst(r.naam, 60), pct: r.pct };
+    });
+    const speedmars = lijst("speedmars").map((r) => {
+      if (!r || !isGetal(r.kg, GRENZEN.speedmars.kg) || !isGetal(r.km, GRENZEN.speedmars.km)) throw new LesFout("Speedmars: bepakking " + GRENZEN.speedmars.kg.join("-") + " kg en afstand " + GRENZEN.speedmars.km.join("-") + " km.");
+      return { kg: r.kg, km: r.km };
+    });
+    return { loop, kracht, speedmars };
+  }
+
+  /** Aanwezigen: geldige V-nummers, elk één keer, gesorteerd. */
+  function controleerAanwezig(lijst) {
+    if (!Array.isArray(lijst) || lijst.length > MAX_AANWEZIG) throw new LesFout("Maximaal " + MAX_AANWEZIG + " aanwezigen.");
+    const schoon = lijst.map(geldigVnr);
+    if (schoon.includes(null)) throw new LesFout("Een V-nummer bestaat uit 3 tot 10 cijfers.");
+    if (new Set(schoon).size !== schoon.length) throw new LesFout("Een V-nummer staat er twee keer in.");
+    return [...schoon].sort(natuurlijk);
+  }
+
+  function nieuwId() {
+    return [...crypto.getRandomValues(new Uint8Array(8))].map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  /** De inhoud van één gegeven les, zoals hij naar de brievenbus gaat. */
+  function maakInhoud({ code, les, onderdelen, aanwezig, nu }) {
+    const naam = tekst(les && les.naam, 120).trim();
+    if (!naam) throw new LesFout("Kies een les of typ een naam.");
+    const lijst = controleerAanwezig(aanwezig);
+    if (!lijst.length) throw new LesFout("Vul minstens één V-nummer in.");
+    return { formaat: FORMAAT_INHOUD, versie: 1, code: String(code || ""), id: nieuwId(), gemaakt: (nu || new Date()).toISOString(),
+      les: { nr: tekst(les.nr, 10), d: tekst(les.d, 60), naam }, onderdelen: controleerOnderdelen(onderdelen), aanwezig: lijst };
+  }
+
+  /** Beheer/dashboard: controleert een ontsleutelde les. Vreemde invoer wordt geweigerd, niet gerepareerd. */
+  function controleerInhoud(x, verwachteCode, nuMs) {
+    const isGoed = x && typeof x === "object" && x.formaat === FORMAAT_INHOUD && x.versie === 1 && typeof x.id === "string" && ID_PATROON.test(x.id)
+      && typeof x.gemaakt === "string" && !Number.isNaN(Date.parse(x.gemaakt)) && x.les && typeof x.les === "object" && typeof x.les.naam === "string" && x.les.naam.trim();
+    if (!isGoed) throw new LesFout("Deze les heeft een onbekende opbouw.");
+    if (String(x.code || "") !== String(verwachteCode || "")) throw new LesFout("Deze les is van een andere groep.");
+    if (typeof nuMs === "number" && Date.parse(x.gemaakt) > nuMs + MAX_VOORUIT_MS) throw new LesFout("Deze les heeft een datum in de toekomst. Zet de klok van de tablet goed.");
+    const aanwezig = controleerAanwezig(x.aanwezig);
+    if (!aanwezig.length) throw new LesFout("Deze les heeft geen aanwezigen.");
+    return { code: String(x.code || ""), id: x.id, gemaakt: x.gemaakt, les: { nr: tekst(x.les.nr, 10), d: tekst(x.les.d, 60), naam: tekst(x.les.naam, 120) },
+      onderdelen: controleerOnderdelen(x.onderdelen), aanwezig };
+  }
+
+  /** Controleert het omhulsel van een inleverbestand (de lessen zelf zijn elk apart versleuteld). */
+  function controleerUit(w, controleerLog) {
+    const isGoed = Boolean(w) && typeof w === "object" && w.formaat === FORMAAT_UIT && w.versie === 1 && typeof w.code === "string"
+      && Array.isArray(w.lessen) && w.lessen.length > 0 && w.lessen.length <= MAX_LESSEN;
+    if (!isGoed) throw new LesFout("Dit is geen lessenbestand van COMBATREADY.");
+    w.lessen.forEach(controleerLog);
+    if (w.lessen.some((l) => l.code !== w.code)) throw new LesFout("Dit lessenbestand bevat lessen van een andere groep.");
+    return w;
+  }
+  function maakUit(code, bestanden, nu) {
+    if (!bestanden.length || bestanden.length > MAX_LESSEN) throw new LesFout("Een lessenbestand bevat 1 tot " + MAX_LESSEN + " lessen.");
+    return { formaat: FORMAAT_UIT, versie: 1, code: String(code || ""), gemaakt: (nu || new Date()).toISOString(), lessen: bestanden };
+  }
+
+  /** Per les één keer (zelfde id), nieuwste eerst. */
+  function uniek(lessen) {
+    const perId = new Map();
+    for (const l of lessen) if (!perId.has(l.id)) perId.set(l.id, l);
+    return [...perId.values()].sort((a, b) => Date.parse(b.gemaakt) - Date.parse(a.gemaakt));
+  }
+
+  /* ---------- doelen per V-nummer (zelfde rekenregels als Uitslagen) ---------- */
+  function xround(x, d) {
+    if (typeof x !== "number" || !isFinite(x)) return x;
+    const m = Math.pow(10, d), v = Number((Math.abs(x) * m).toPrecision(15));
+    return Math.sign(x) * Math.round(v) / m;
+  }
+  const xmod = (a, b) => a - b * Math.floor(a / b);
+  const mmss = (s) => Math.floor(s / 60) + ":" + String(xround(xmod(s, 60), 0)).padStart(2, "0");
+  /** Tijd als m:ss, vanaf een uur als u:mm:ss. */
+  const tijdTekst = (s) => (s < 3600 ? mmss(s) : Math.floor(s / 3600) + ":" + mmss(xmod(s, 3600)).padStart(5, "0"));
+  const kgTekst = (x) => x.toLocaleString("nl-NL", { maximumFractionDigits: 1 });
+
+  /** Looptijd in seconden voor afstand m op pct% van de 1000m-tijd b50 (zoals de tabel Trainingsafstanden). */
+  const looptijd = (b50, m, pct) => xround(b50 * Math.pow(m / 1000, 1.06) * (100 / xround(pct, 6)), 0);
+  /** AD-tempo in seconden per km uit de 5 km-tijd (seconden): het tempo voor 60 minuten voluit. */
+  function adTempo(k5) {
+    const km = 5 * Math.pow(AD_SECONDEN / k5, 1 / 1.06);
+    return AD_SECONDEN / km;
+  }
+  /** Looptijd in seconden voor m meter op pct% van het AD-tempo. b72 = 5 km-equivalent per 1000 m (uit het groepsbestand). */
+  const adLooptijd = (b72, m, pct) => xround((m / 1000) * adTempo(b72 * Math.pow(5, 1.06)) * (100 / xround(pct, 6)), 0);
+  /** Gewicht bij pct% van 1RM, op 0,1 kg (zoals de tabel % van 1RM). */
+  const krachtKg = (rm, pct) => xround(rm * (pct / 100), 1);
+
+  /**
+   * Doelen van één persoon. `waarden` komt uit Uitslagen (lesWaarden): { b50, b72, afstanden, kracht: [{ naam, rm }] }, of null als het
+   * V-nummer niet in het groepsbestand staat. Geeft per regel de tekst ("1:23", "85 kg") of "–".
+   * Basis van de looptijd: onder 5 km (intervallen, t/m 3000 m) de 1000m-tijd, vanaf 5 km de 5 km-tijd. Geen 5 km-tijd bekend: "–"
+   * (zoals de Excel: geen 5 km, dan blijven de lange afstanden leeg).
+   */
+  function doelen(waarden, onderdelen) {
+    const o = controleerOnderdelen(onderdelen);
+    const getal = (x) => (typeof x === "number" && isFinite(x) ? x : null);
+    const basisVan = (m) => getal(waarden && (m >= VANAF_5KM_M ? waarden.b72 : waarden.b50));
+    const rmVan = (naam) => { const k = waarden && (waarden.kracht || []).find((x) => x.naam === naam); return k && typeof k.rm === "number" ? k.rm : null; };
+    return {
+      loop: o.loop.map((r) => {
+        if (r.basis === "AD") {   // AD: altijd uit de 5 km-tijd; met tempo per km erbij
+          const b72 = getal(waarden && waarden.b72);
+          if (b72 === null) return "–";
+          const t = adLooptijd(b72, r.m, r.pct);
+          return tijdTekst(t) + " · " + mmss(xround(t * 1000 / r.m, 0)) + "/km";
+        }
+        const b = basisVan(r.m); return b === null ? "–" : tijdTekst(looptijd(b, r.m, r.pct));
+      }),
+      kracht: o.kracht.map((r) => { const rm = rmVan(r.naam); return rm === null ? "–" : kgTekst(krachtKg(rm, r.pct)) + " kg"; })
+    };
+  }
+
+  /** Waarom er bij deze persoon een "–" staat: welke waarden ontbreken in het groepsbestand (lege lijst = niets). */
+  function ontbreekt(waarden, onderdelen) {
+    const o = controleerOnderdelen(onderdelen);
+    if (!waarden) return ["niet in het groepsbestand"];
+    const heeft = (x) => typeof x === "number" && isFinite(x);
+    const uit = [];
+    if (o.loop.some((r) => r.m < VANAF_5KM_M && r.basis !== "AD") && !heeft(waarden.b50)) uit.push("1000m-tijd");
+    if (o.loop.some((r) => r.m >= VANAF_5KM_M || r.basis === "AD") && !heeft(waarden.b72)) uit.push("5 km-tijd");
+    for (const r of o.kracht) { const k = (waarden.kracht || []).find((x) => x.naam === r.naam); if (!k || !heeft(k.rm)) uit.push("1RM " + r.naam); }
+    return [...new Set(uit)];
+  }
+
+  /** Speedmars is voor iedereen gelijk (hangt alleen af van bepakking en afstand): realistische tijd en pace. */
+  function speedmarsDoel(bepakking, r) {
+    let f = 1, cat = "";
+    for (const b of Array.isArray(bepakking) ? bepakking : []) if (b && r.kg >= b.kg) { f = b.factor; cat = b.cat; }
+    const tijd = xround(r.km * 6 * f, 1);
+    return { tijd: kgTekst(tijd) + " min", pace: mmss(xround(tijd * 60 / r.km, 0)) + " min/km", cat: String(cat || "") };
+  }
+
+  /** Korte omschrijving van de onderdelen, bijv. "400 m 90% · Bench 80% · Speedmars 15 kg 9 km". */
+  function omschrijving(onderdelen) {
+    const o = controleerOnderdelen(onderdelen);
+    const getal = (x) => String(x).replace(".", ",");
+    return [...o.loop.map((r) => getal(r.m) + " m " + getal(r.pct) + "%" + (r.basis === "AD" ? " AD" : "")), ...o.kracht.map((r) => r.naam + " " + getal(r.pct) + "%"),
+      ...o.speedmars.map((r) => "Speedmars " + getal(r.kg) + " kg " + getal(r.km) + " km")].join(" · ");
+  }
+
+  /*
+   * Voorstel uit de les in het rooster (FTS-overzicht, tabblad Lessen): D Zone ("80% OP", "DL3 · 90–95% AD"), E Km ("8 km"),
+   * F Opdracht ("8–10×400 m", "duurloop"), met de lesnaam als reserve. Alleen een voorstel: de instructeur past het aan.
+   * Percentage: een bereik geeft het midden (90–95 -> 92,5); "% HfMax" (hartslag) wordt niet overgenomen.
+   */
+  const getalVan = (t) => Number(String(t).replace(",", "."));
+  function percentageUit(tekst) {
+    const t = String(tekst || "");
+    const m = /(\d+(?:[.,]\d+)?)(?:\s*[–-]\s*(\d+(?:[.,]\d+)?))?\s*%(?!\s*Hf)/i.exec(t);
+    if (!m) return null;
+    const pct = m[2] ? (getalVan(m[1]) + getalVan(m[2])) / 2 : getalVan(m[1]);
+    return isGetal(pct, GRENZEN.loop.pct) ? Math.round(pct * 2) / 2 : null;
+  }
+  /** "AD" als het percentage van de anaerobe drempel is ("90–95% AD"), anders "OP". */
+  const basisUit = (tekst) => (/%\s*AD\b/i.test(String(tekst || "")) ? "AD" : "OP");
+  function herhaalAfstandUit(tekst) {   // "8–10×400 m", "7-8 x 600m" -> 400 / 600
+    const m = /[×x]\s*(\d+(?:[.,]\d+)?)\s*(km|m)\b/i.exec(String(tekst || ""));
+    if (!m) return null;
+    const meters = getalVan(m[1]) * (m[2].toLowerCase() === "km" ? 1000 : 1);
+    return isGetal(meters, GRENZEN.loop.m) ? meters : null;
+  }
+  function kmUit(tekst) {   // "8 km", "9,5 km"; een bereik ("3,2–4 km") telt niet
+    const m = /(^|[^\d.,–-])(\d+(?:[.,]\d+)?)\s*km\b/i.exec(String(tekst || ""));
+    if (!m || /[–-]\s*$/.test(String(tekst).slice(0, m.index + m[1].length))) return null;
+    const km = getalVan(m[2]);
+    return km > 0 && km <= 60 ? km : null;
+  }
+  /** Geeft { aan, loop: { m, pct } | null, speedmarsKm } met wat er uit de les te halen is (null = niet gevonden). */
+  function voorstel(L) {
+    const x = L && typeof L === "object" ? L : {};
+    const aan = standaardOnderdelen(x.d);
+    const naam = String(x.les || "");
+    const herhaal = herhaalAfstandUit(x.opdr) ?? herhaalAfstandUit(naam);
+    const km = kmUit(x.km) ?? kmUit(naam);
+    const m = herhaal ?? (km !== null && km * 1000 <= GRENZEN.loop.m[1] ? km * 1000 : null);
+    const pct = percentageUit(x.zone) ?? percentageUit(naam);
+    const basis = percentageUit(x.zone) !== null ? basisUit(x.zone) : basisUit(naam);
+    return { aan, loop: m !== null || pct !== null ? { m, pct, basis } : null, speedmarsKm: km };
+  }
+
+  /**
+   * Hoe de invoerstap eruitziet bij deze les: "vast" (één onderdeel, geen keuze: hardlopen/kracht/speedmars),
+   * "kies" (COMBI of een zelf getypte les: instructeur kiest de onderdelen) of "geen" (zwemmen, MMA, marsen …: geen doelen,
+   * meteen naar de aanwezigen).
+   */
+  function invoerSoort(discipline, isEigen) {
+    const a = standaardOnderdelen(discipline);
+    if (isEigen || /combi/i.test(String(discipline || ""))) return "kies";
+    return a.loop || a.kracht || a.speedmars ? "vast" : "geen";
+  }
+
+  /** Welke onderdelen standaard aan staan bij een discipline uit het rooster. */
+  function standaardOnderdelen(discipline) {
+    const d = String(discipline || "").toLowerCase();
+    return { loop: /hardlo|loop|interval/.test(d), kracht: /kracht/.test(d), speedmars: /speedmars/.test(d) };
+  }
+
+  const api = Object.freeze({ VANAF_5KM_M, BASISSEN, adTempo, adLooptijd, tijdTekst, LesFout, FORMAAT_INHOUD, FORMAAT_UIT, MAX_REGELS, MAX_AANWEZIG, MAX_LESSEN, GRENZEN, geldigVnr, leesGetal,
+    controleerOnderdelen, controleerAanwezig, maakInhoud, controleerInhoud, controleerUit, maakUit, uniek, doelen, speedmarsDoel, omschrijving,
+    standaardOnderdelen, invoerSoort, voorstel, ontbreekt, looptijd, krachtKg, mmss });
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.Les = api;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+"use strict";
+/*
  * Kaart "Jouw gewichten" in het lesscherm van de marinier, alleen bij een krachtles.
  * De marinier kiest een oefening en ziet zijn eigen kg bij een reeks percentages van zijn 1RM.
  * Rekenregel zoals bij Uitslagen (% van 1RM): 1RM x %, op 0,1 kg. Het 1RM komt uit het groepsbestand op het toestel
@@ -2205,7 +2475,7 @@ table.krachttabel tbody tr:nth-child(even) td{background:var(--vlak)}
     const u = opties.uitslagen;
     if (!u) return host.append(el("p", { class: "note", text: "Importeer het groepsbestand van je groep (…_MPT_….mpt), dan zie je hier je eigen kg bij elk percentage van je 1RM." }));
     const p = opties.vnr ? u.zoek(opties.vnr) : null;
-    if (!p) return vraagVnr(host, opties);
+    if (!p) return vraagVnr(host, opties, "krachtVnr", "kg");
     let waarden;
     try { waarden = u.lesWaarden(p).kracht.filter((k) => typeof k.rm === "number" && k.rm > 0); } catch (_) { waarden = []; }
     if (!waarden.length) return host.append(el("p", { class: "note", text: "In het groepsbestand staat (nog) geen 1RM voor V-nummer " + opties.vnr + "." }));
@@ -2229,8 +2499,9 @@ table.krachttabel tbody tr:nth-child(even) td{background:var(--vlak)}
       el("p", { class: "note", text: "Uit je groepsbestand (V-nummer " + opties.vnr + "). Kies bij elke oefening uit de toelichting het percentage." }));
   }
 
-  function vraagVnr(host, opties) {
-    const veld = el("input", { type: "text", inputmode: "numeric", maxlength: "10", autocomplete: "off", class: "fill", id: "krachtVnr", name: "search-krachtvnr", placeholder: "V-nummer", "aria-label": "V-nummer" });
+  /** V-nummer één keer vragen (gedeeld met Jouw tempo). `wat` zegt wat hij daarna ziet ("kg", "tijden"). */
+  function vraagVnr(host, opties, id, wat) {
+    const veld = el("input", { type: "text", inputmode: "numeric", maxlength: "10", autocomplete: "off", class: "fill", id, name: "search-" + id.toLowerCase(), placeholder: "V-nummer", "aria-label": "V-nummer" });
     const m = el("div", { class: "msg" });
     const knop = el("button", { type: "button", class: "btn", text: "Toon" });
     const ga = async () => {
@@ -2241,19 +2512,80 @@ table.krachttabel tbody tr:nth-child(even) td{background:var(--vlak)}
     };
     knop.addEventListener("click", ga);
     veld.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); ga(); } });
-    host.append(el("p", { class: "muted small", style: "margin-top:0", text: "Vul één keer je V-nummer in; daarna zie je hier je eigen kg." }), el("div", { class: "rij2" }, veld, knop), m);
+    host.append(el("p", { class: "muted small", style: "margin-top:0", text: "Vul één keer je V-nummer in; daarna zie je hier je eigen " + wat + "." }), el("div", { class: "rij2" }, veld, knop), m);
   }
 
   /** Vergrendelen: kaart leeg en keuze vergeten. */
   function wis(host) { gekozen = ""; if (host) { host.textContent = ""; host.hidden = true; } }
 
-  root.KrachtLes = Object.freeze({ teken, wis, isKracht, PERCENTAGES });
+  root.KrachtLes = Object.freeze({ teken, wis, isKracht, vraagVnr, PERCENTAGES });
+})(globalThis);
+
+"use strict";
+/*
+ * Kaart "Jouw tempo" in het lesscherm van de marinier, alleen bij een hardlooples.
+ * Afstand, percentage en basis (OP = optimale prestatie, AD = anaerobe drempel) komen uit het rooster (Les.voorstel),
+ * de marinier kan ze aanpassen. Doeltijd en tempo met dezelfde regels als de instructeur (Les.doelen).
+ * De 1000m- en 5 km-tijd komen uit het groepsbestand op het toestel. Er wordt niets bewaard of verstuurd.
+ */
+(function (root) {
+  const { Basis, Les, KrachtLes } = root;
+  const { el } = Basis;
+  const isLoop = (discipline) => Les.invoerSoort(discipline, false) === "vast" && Les.standaardOnderdelen(discipline).loop;
+  const getal = (x) => (x === null || x === undefined ? "" : String(x).replace(".", ","));
+
+  /** Tekent de kaart in `host`. `opties`: { les (uit het rooster), uitslagen, vnr, bewaarVnr }. Geen hardlooples: verborgen. */
+  function teken(host, opties) {
+    const L = opties.les || {};
+    host.textContent = "";
+    host.hidden = !isLoop(L.d);
+    if (host.hidden) return;
+    host.append(el("h2", { text: "Jouw tempo" }));
+    const u = opties.uitslagen;
+    if (!u) return host.append(el("p", { class: "note", text: "Importeer het groepsbestand van je groep (…_MPT_….mpt), dan zie je hier je eigen doeltijd en tempo." }));
+    const p = opties.vnr ? u.zoek(opties.vnr) : null;
+    if (!p) return KrachtLes.vraagVnr(host, opties, "loopVnr", "doeltijd en tempo");
+    let waarden = null;
+    try { waarden = u.lesWaarden(p); } catch (_) { waarden = null; }
+    const v = Les.voorstel(L).loop || {};
+    const afstand = el("input", { type: "text", inputmode: "decimal", class: "fill", id: "loopM", name: "search-loopm", value: getal(v.m), "aria-label": "Afstand in meters" });
+    const pct = el("input", { type: "text", inputmode: "decimal", class: "fill", id: "loopPct", name: "search-looppct", value: getal(v.pct), "aria-label": "Percentage" });
+    const basis = el("select", { class: "fill", id: "loopBasis", "aria-label": "Percentage van" });
+    basis.append(el("option", { value: "OP", text: "OP (prestatie)" }), el("option", { value: "AD", text: "AD (drempel)" }));
+    basis.value = v.basis === "AD" ? "AD" : "OP";
+    const uit = el("div", { class: "out loopuit", id: "loopUit" });
+    const reken = () => {
+      uit.textContent = "";
+      const m = Les.leesGetal(afstand.value), pc = Les.leesGetal(pct.value);
+      let tekst = "Vul afstand en % in.";
+      try {
+        if (m !== null && pc !== null) {
+          const regel = { m, pct: pc, basis: basis.value };
+          const d = Les.doelen(waarden, { loop: [regel] }).loop[0];
+          const mist = Les.ontbreekt(waarden, { loop: [regel] });
+          tekst = d !== "–" ? d : "– (" + (mist.join(", ") || "geen gegevens") + " ontbreekt in het groepsbestand)";
+        }
+      } catch (e) { tekst = e instanceof Les.LesFout ? e.message : "Kan niet uitrekenen."; }
+      uit.append(el("span", { text: m !== null && pc !== null ? getal(m) + " m op " + getal(pc) + "% " + basis.value : "Doeltijd" }), el("b", { text: tekst }));
+    };
+    for (const veld of [afstand, pct, basis]) veld.addEventListener(veld === basis ? "change" : "input", reken);
+    reken();
+    host.append(
+      el("div", { class: "lesregel" },
+        el("label", { class: "lesveld" }, el("span", { text: "Afstand (m)" }), afstand),
+        el("label", { class: "lesveld" }, el("span", { text: "%" }), pct),
+        el("label", { class: "lesveld" }, el("span", { text: "van" }), basis)),
+      el("div", { class: "uitslag" }, uit),
+      el("p", { class: "note", text: "Voorgevuld uit het rooster" + (L.zone ? " (" + L.zone + ")" : "") + "; pas aan als je instructeur iets anders zegt. OP = % van je beste tijd op die afstand. AD = % van het tempo dat je volgens je 5 km-tijd een uur voluit loopt." }));
+  }
+
+  root.LoopLes = Object.freeze({ teken, isLoop });
 })(globalThis);
 
 "use strict";
 /* COMBATREADY (marinier) - schermen. Gebruikt Kluis (versleuteling) en Logboek (rekenregels). */
 (() => {
-const { Basis, Kluis, Logboek, FitLezer, Analyse, Grafiek, Brievenbus, Overzicht, Uitslagen, KrachtLes } = globalThis;
+const { Basis, Kluis, Logboek, FitLezer, Analyse, Grafiek, Brievenbus, Overzicht, Uitslagen, KrachtLes, LoopLes } = globalThis;
 const { $, el, msg, busy } = Basis;
 const IDLE_MS = 10 * 60 * 1000;      // na 10 min niets doen: slot
 const HIDDEN_MS = 2 * 60 * 1000;     // app 2 min op achtergrond: slot
@@ -2436,6 +2768,7 @@ function vergrendel(melding) {
   $("#btnFit").textContent = FIT_KNOP; $("#btnFitWis").hidden = true; $("#nieuwTitel").textContent = "Nieuw rooster";   // ook knopteksten verraden iets over de laatste les
   $("#lesKop").style.borderLeftColor = "";
   KrachtLes.wis($("#lesKracht"));
+  $("#lesLoop").textContent = ""; $("#lesLoop").hidden = true;
   $("#nieuwCard").hidden = true;
   slot.stop();
   if (omhulsel || omhulselUitslag) slotScherm(melding); else show("scrStart");
@@ -2864,6 +3197,10 @@ function tekenInlever() {
 function tekenKracht(L) {
   KrachtLes.teken($("#lesKracht"), {
     discipline: L && L.d, uitslagen: staat && staat.uitslagen, vnr: (staat && staat.log && staat.log.vnr) || "",
+    bewaarVnr: async (vnr) => { await bewaarLog(Logboek.metVnr(staat.log, vnr)); if (staat && huidig) tekenKracht(huidig.item.les); }
+  });
+  LoopLes.teken($("#lesLoop"), {
+    les: L, uitslagen: staat && staat.uitslagen, vnr: (staat && staat.log && staat.log.vnr) || "",
     bewaarVnr: async (vnr) => { await bewaarLog(Logboek.metVnr(staat.log, vnr)); if (staat && huidig) tekenKracht(huidig.item.les); }
   });
 }
