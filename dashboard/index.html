@@ -343,6 +343,9 @@ button.lesvink .vink{flex:0 0 24px;height:24px;border-radius:7px;border:2px soli
 button.lesvink[aria-pressed="true"]{border-color:var(--lijn);background:var(--vlak)}
 button.lesvink[aria-pressed="true"] .vink{background:linear-gradient(180deg,var(--accent),var(--accent2));border-color:transparent;color:var(--op)}
 .card:has(> .lesgroep){scroll-margin-top:calc(96px + env(safe-area-inset-top))}   /* na Groep: kaart niet onder de kopbalk */
+/* Krachtles (marinier): eigen kg bij % van 1RM */
+table.krachttabel td,table.krachttabel th{padding:9px 8px;font-size:15px}
+table.krachttabel tbody tr:nth-child(even) td{background:var(--vlak)}
 /* Dashboard-pagina (pc): zijbalk met tekst, lichte kopbalk, kerncijfers, aandacht nodig, sorteerbare tabel, weekstaven.
    Kleuren uit app.css; alleen wat hier extra nodig is staat hieronder, licht en donker. */
 body.dash{--spoor:#edf1e3;--rail:#0f130b;--railink:#a9b39c;--railrood:#ff9b8a;--laag:#e29a87;--schaduw:0 1px 2px rgba(20,26,12,.05),0 10px 30px rgba(20,26,12,.07);font-size:14px}

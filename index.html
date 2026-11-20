@@ -342,6 +342,9 @@ button.lesvink .vink{flex:0 0 24px;height:24px;border-radius:7px;border:2px soli
 button.lesvink[aria-pressed="true"]{border-color:var(--lijn);background:var(--vlak)}
 button.lesvink[aria-pressed="true"] .vink{background:linear-gradient(180deg,var(--accent),var(--accent2));border-color:transparent;color:var(--op)}
 .card:has(> .lesgroep){scroll-margin-top:calc(96px + env(safe-area-inset-top))}   /* na Groep: kaart niet onder de kopbalk */
+/* Krachtles (marinier): eigen kg bij % van 1RM */
+table.krachttabel td,table.krachttabel th{padding:9px 8px;font-size:15px}
+table.krachttabel tbody tr:nth-child(even) td{background:var(--vlak)}
 </style>
 </head>
 <body class="app">
@@ -443,6 +446,7 @@ button.lesvink[aria-pressed="true"] .vink{background:linear-gradient(180deg,var(
 <section id="scrLes" class="screen" hidden>
   <button class="back" type="button" id="btnTerug">‹ Week</button>
   <div class="card" id="lesKop"></div>
+  <div class="card" id="lesKracht" hidden></div>
   <div class="card">
     <h2>Horloge</h2>
     <div id="fitKort"></div>
@@ -2173,9 +2177,83 @@ button.lesvink[aria-pressed="true"] .vink{background:linear-gradient(180deg,var(
 })(typeof globalThis !== "undefined" ? globalThis : this);
 
 "use strict";
+/*
+ * Kaart "Jouw gewichten" in het lesscherm van de marinier, alleen bij een krachtles.
+ * De marinier kiest een oefening en ziet zijn eigen kg bij een reeks percentages van zijn 1RM.
+ * Rekenregel zoals bij Uitslagen (% van 1RM): 1RM x %, op 0,1 kg. Het 1RM komt uit het groepsbestand op het toestel
+ * (met terugval op de historie, zoals de uitslag). Er wordt niets bewaard of verstuurd.
+ */
+(function (root) {
+  const { Basis } = root;
+  const { el } = Basis;
+  const PERCENTAGES = Object.freeze([30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]);   // van 30% tot 95%, per 5%
+  const isKracht = (discipline) => /kracht/i.test(String(discipline || ""));
+  const kg = (rm, pct) => Math.round(rm * pct * 10 / 100) / 10;
+  const kgTekst = (x) => x.toLocaleString("nl-NL", { maximumFractionDigits: 1 }) + " kg";
+
+  let gekozen = "";   // laatst gekozen oefening (alleen in geheugen)
+
+  /**
+   * Tekent de kaart in `host`. `opties`: { discipline, uitslagen (Uitslagen.maak of null), vnr (of ""), bewaarVnr(vnr) -> Promise }.
+   * Geen krachtles: host blijft leeg en verborgen.
+   */
+  function teken(host, opties) {
+    host.textContent = "";
+    host.hidden = !isKracht(opties.discipline);
+    if (host.hidden) return;
+    host.append(el("h2", { text: "Jouw gewichten" }));
+    const u = opties.uitslagen;
+    if (!u) return host.append(el("p", { class: "note", text: "Importeer het groepsbestand van je groep (…_MPT_….mpt), dan zie je hier je eigen kg bij elk percentage van je 1RM." }));
+    const p = opties.vnr ? u.zoek(opties.vnr) : null;
+    if (!p) return vraagVnr(host, opties);
+    let waarden;
+    try { waarden = u.lesWaarden(p).kracht.filter((k) => typeof k.rm === "number" && k.rm > 0); } catch (_) { waarden = []; }
+    if (!waarden.length) return host.append(el("p", { class: "note", text: "In het groepsbestand staat (nog) geen 1RM voor V-nummer " + opties.vnr + "." }));
+    if (!waarden.some((k) => k.naam === gekozen)) gekozen = waarden[0].naam;
+    const keuze = el("select", { class: "fill", id: "krachtOef", "aria-label": "Oefening" });
+    for (const k of waarden) keuze.append(el("option", { value: k.naam, text: k.naam }));
+    keuze.value = gekozen;
+    const tabel = el("div");
+    const vul = () => {
+      gekozen = keuze.value;
+      const k = waarden.find((x) => x.naam === gekozen);
+      tabel.textContent = "";
+      const body = el("tbody");
+      for (const pct of PERCENTAGES) body.append(el("tr", null, el("td", { text: pct + "%" }), el("td", { text: kgTekst(kg(k.rm, pct)) })));
+      tabel.append(el("p", { class: "muted small", text: "1RM " + k.naam + ": " + kgTekst(k.rm) }),
+        el("div", { class: "tablewrap" }, el("table", { class: "ronden krachttabel" }, el("thead", null, el("tr", null, el("th", { text: "% van 1RM" }), el("th", { text: "Gewicht" }))), body)));
+    };
+    keuze.addEventListener("change", vul);
+    vul();
+    host.append(el("label", { class: "f", for: "krachtOef", text: "Oefening" }), keuze, tabel,
+      el("p", { class: "note", text: "Uit je groepsbestand (V-nummer " + opties.vnr + "). Kies bij elke oefening uit de toelichting het percentage." }));
+  }
+
+  function vraagVnr(host, opties) {
+    const veld = el("input", { type: "text", inputmode: "numeric", maxlength: "10", autocomplete: "off", class: "fill", id: "krachtVnr", name: "search-krachtvnr", placeholder: "V-nummer", "aria-label": "V-nummer" });
+    const m = el("div", { class: "msg" });
+    const knop = el("button", { type: "button", class: "btn", text: "Toon" });
+    const ga = async () => {
+      const v = veld.value.trim();
+      if (!/^\d{3,10}$/.test(v)) return Basis.msg(m, "Vul je V-nummer in (alleen cijfers).");
+      if (!opties.uitslagen.zoek(v)) return Basis.msg(m, "V-nummer " + v + " staat niet in het groepsbestand.");
+      try { await opties.bewaarVnr(v); } catch (_) { return Basis.msg(m, "Bewaren op dit toestel is mislukt."); }
+    };
+    knop.addEventListener("click", ga);
+    veld.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); ga(); } });
+    host.append(el("p", { class: "muted small", style: "margin-top:0", text: "Vul één keer je V-nummer in; daarna zie je hier je eigen kg." }), el("div", { class: "rij2" }, veld, knop), m);
+  }
+
+  /** Vergrendelen: kaart leeg en keuze vergeten. */
+  function wis(host) { gekozen = ""; if (host) { host.textContent = ""; host.hidden = true; } }
+
+  root.KrachtLes = Object.freeze({ teken, wis, isKracht, PERCENTAGES });
+})(globalThis);
+
+"use strict";
 /* COMBATREADY (marinier) - schermen. Gebruikt Kluis (versleuteling) en Logboek (rekenregels). */
 (() => {
-const { Basis, Kluis, Logboek, FitLezer, Analyse, Grafiek, Brievenbus, Overzicht, Uitslagen } = globalThis;
+const { Basis, Kluis, Logboek, FitLezer, Analyse, Grafiek, Brievenbus, Overzicht, Uitslagen, KrachtLes } = globalThis;
 const { $, el, msg, busy } = Basis;
 const IDLE_MS = 10 * 60 * 1000;      // na 10 min niets doen: slot
 const HIDDEN_MS = 2 * 60 * 1000;     // app 2 min op achtergrond: slot
@@ -2357,6 +2435,7 @@ function vergrendel(melding) {
   tekenInvoer(); tekenTab();
   $("#btnFit").textContent = FIT_KNOP; $("#btnFitWis").hidden = true; $("#nieuwTitel").textContent = "Nieuw rooster";   // ook knopteksten verraden iets over de laatste les
   $("#lesKop").style.borderLeftColor = "";
+  KrachtLes.wis($("#lesKracht"));
   $("#nieuwCard").hidden = true;
   slot.stop();
   if (omhulsel || omhulselUitslag) slotScherm(melding); else show("scrStart");
@@ -2614,6 +2693,7 @@ function lesScherm(item, k) {
   kop.append(el("div", { class: "nr", text: item.dagNaam + " · les " + item.nr + (L && L.d ? " · " + L.d : "") }), el("b", { text: L ? (L.les || L.d) : "Les " + item.nr }));
   for (const regel of L ? [L.zone, L.km, L.opdr].filter(Boolean) : []) kop.append(el("div", { class: "muted", text: regel }));
   if (L && L.uitleg) kop.append(el("p", { class: "uitleg", id: "lesUitleg", text: L.uitleg }));   // toelichting van de instructeur
+  tekenKracht(L);
   invoer = { status: item.log ? item.log.status : null, zwaarte: item.log ? item.log.zwaarte : null, fit: (item.log && item.log.fit) || null };
   wijzigMaxHs = false;
   msg($("#msgFit"), "");
@@ -2778,6 +2858,14 @@ function tekenInlever() {
     el("p", { class: "muted small", text: "V-nummer " + log.vnr + " · brievenbus van " + (log.bus.gemaakt || "?") }),
     el("p", { class: "note", text: "Er gaat mee: per les gedaan of niet, zwaarte en duur. Niets uit je horloge. Alleen je instructeurs kunnen het bestand openen." }),
     knop, el("div", { style: "text-align:center" }, wijzig));
+}
+
+/* ---------- krachtles: eigen kg bij % van 1RM (bron/krachtles.js) ---------- */
+function tekenKracht(L) {
+  KrachtLes.teken($("#lesKracht"), {
+    discipline: L && L.d, uitslagen: staat && staat.uitslagen, vnr: (staat && staat.log && staat.log.vnr) || "",
+    bewaarVnr: async (vnr) => { await bewaarLog(Logboek.metVnr(staat.log, vnr)); if (staat && huidig) tekenKracht(huidig.item.les); }
+  });
 }
 
 /* ---------- uitslagen (MPT) ---------- */
